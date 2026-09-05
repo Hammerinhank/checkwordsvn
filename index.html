@@ -1,18 +1,575 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Check de mots VN</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sửa lỗi — correcteur de frappe vietnamien</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background:#f5f5f7; color:#1d1d1f; text-align:center; padding:60px 20px; }
-  h1 { color:#0071e3; }
-  p { color:#86868b; }
+  :root{
+    --papier:#EFF1EC;
+    --carte:#FFFFFF;
+    --encre:#18211E;
+    --encre-douce:#5C6A64;
+    --jade:#0E6B57;
+    --jade-clair:#D9E7E2;
+    --laque:#B3261E;
+    --laque-fond:#FBE9E7;
+    --trait:#D5DAD4;
+    --rayon:10px;
+    --serif: "Charter","Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--papier);
+    color:var(--encre);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.5;
+    padding:18px 16px 64px;
+    -webkit-text-size-adjust:100%;
+  }
+  .page{max-width:760px;margin:0 auto}
+
+  header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  h1{
+    font-family:var(--serif);
+    font-size:1.7rem;
+    font-weight:600;
+    letter-spacing:-.01em;
+    margin:0;
+  }
+  h1 .vn{color:var(--jade)}
+  .badge{
+    font-size:.78rem;
+    font-weight:600;
+    color:var(--jade);
+    background:var(--jade-clair);
+    border:1px solid #BCD5CD;
+    border-radius:999px;
+    padding:3px 10px;
+    cursor:pointer;
+  }
+  .badge:hover{background:#CCE0D9}
+  .sous-titre{color:var(--encre-douce);font-size:.95rem;margin:0 0 20px}
+
+  .carte{
+    background:var(--carte);
+    border:1px solid var(--trait);
+    border-radius:var(--rayon);
+    padding:14px 16px;
+    margin-bottom:14px;
+  }
+
+  .zone-titre{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font-size:.9rem;color:var(--encre-douce);margin-bottom:8px;
+  }
+  .compteur{font-variant-numeric:tabular-nums}
+
+  #editeur{
+    font-family:var(--serif);
+    font-size:1.2rem;
+    line-height:1.75;
+    min-height:170px;
+    max-width:64ch;
+    white-space:pre-wrap;
+    word-wrap:break-word;
+    outline:none;
+    border-left:3px solid var(--jade);
+    padding:2px 0 2px 14px;
+  }
+  #editeur:empty::before{
+    content:attr(data-vide);
+    color:#9AA5A0;
+  }
+  #editeur:focus-visible{outline:none}
+  .carte:focus-within{border-color:#B7C6C0;box-shadow:0 0 0 3px rgba(14,107,87,.10)}
+
+  .corr{
+    color:var(--laque);
+    background:var(--laque-fond);
+    border-radius:3px;
+    padding:0 2px;
+  }
+
+  .boutons{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+  button{
+    font-family:inherit;font-size:.95rem;
+    border-radius:8px;
+    border:1px solid var(--trait);
+    background:var(--carte);
+    color:var(--encre);
+    padding:10px 14px;
+    cursor:pointer;
+  }
+  button:hover{background:#F4F6F3}
+  button:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
+  button.principal{background:var(--jade);border-color:var(--jade);color:#fff;font-weight:600}
+  button.principal:hover{background:#0B5A49}
+  button.discret{color:var(--encre-douce)}
+
+  #etat{min-height:1.4em;font-size:.9rem;color:var(--encre-douce);margin-top:10px}
+  #etat.alerte{color:var(--laque)}
+
+  #resume{display:none}
+  #resume h2{font-family:var(--sans);font-size:.95rem;font-weight:600;margin:0 0 8px}
+  #resume ol{margin:0;padding-left:20px}
+  #resume li{margin:3px 0;font-family:var(--serif);font-size:1.02rem}
+  #resume .avant{color:var(--encre-douce);text-decoration:line-through}
+  #resume .apres{color:var(--laque);font-weight:600}
+
+  dialog{
+    border:1px solid var(--trait);border-radius:12px;padding:0;
+    max-width:min(560px,92vw);width:100%;
+    background:var(--carte);color:var(--encre);
+  }
+  dialog::backdrop{background:rgba(24,33,30,.45)}
+  .modal-tete{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--trait)}
+  .modal-tete h2{margin:0;font-size:1.05rem}
+  .modal-corps{padding:16px;max-height:60vh;overflow:auto}
+  .modal-pied{padding:12px 16px;border-top:1px solid var(--trait);display:flex;gap:8px;justify-content:flex-end}
+  #zoneColle{width:100%;min-height:140px;font-family:var(--serif);font-size:1.05rem;padding:10px;border:1px solid var(--trait);border-radius:8px;resize:vertical}
+  .fermer{border:none;background:none;font-size:1.2rem;line-height:1;padding:6px 8px;cursor:pointer;color:var(--encre-douce)}
+  .hist{margin:0;padding:0;list-style:none}
+  .hist li{padding:8px 0;border-bottom:1px solid var(--trait);font-size:.94rem}
+  .hist li:last-child{border-bottom:none}
+  .hist b{color:var(--jade)}
+
+  .aide{font-size:.88rem;color:var(--encre-douce);margin:18px 0 0;max-width:62ch}
+  .aide code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:#E6E9E4;padding:1px 4px;border-radius:4px}
+
+  @media (prefers-reduced-motion:no-preference){
+    .corr{transition:background .2s ease}
+  }
+  @media (max-width:520px){
+    #editeur{font-size:1.1rem}
+    .boutons button{flex:1 1 auto}
+  }
 </style>
 </head>
 <body>
-<h1>Check de mots VN</h1>
-<p>Nouvelle application créée avec Le Déployeur.</p>
-<p>Déploie ton code depuis l'étape 3 pour remplacer cette page.</p>
+<div class="page">
+
+  <header>
+    <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
+    <button class="badge" id="badgeVersion" title="Historique des versions">V1</button>
+  </header>
+  <p class="sous-titre">Écris ton texte vietnamien, envoie-le à ChatGPT, puis recolle sa réponse : les mots corrigés apparaissent en rouge.</p>
+
+  <div class="carte">
+    <div class="zone-titre">
+      <span>Ton texte</span>
+      <span class="compteur" id="compteur">0 mot</span>
+    </div>
+    <div id="editeur" contenteditable="true" spellcheck="false" lang="vi" data-vide="Chào bạn, hôm nay bạn thế nào ?"></div>
+  </div>
+
+  <div class="boutons">
+    <button class="principal" id="btnEnvoyer">Envoyer à ChatGPT</button>
+    <button id="btnCopier">Copier la requête</button>
+    <button class="principal" id="btnAppliquer">Appliquer la correction</button>
+  </div>
+  <div class="boutons">
+    <button class="discret" id="btnAccepter">Accepter les corrections</button>
+    <button class="discret" id="btnRevenir">Revenir au texte envoyé</button>
+    <button class="discret" id="btnVider">Tout effacer</button>
+  </div>
+
+  <div id="etat"></div>
+
+  <div class="carte" id="resume">
+    <h2 id="resumeTitre">Corrections</h2>
+    <ol id="resumeListe"></ol>
+  </div>
+
+  <p class="aide">
+    « Envoyer à ChatGPT » copie la requête complète et ouvre ChatGPT dans un nouvel onglet.
+    Copie ensuite la réponse, reviens ici et touche « Appliquer la correction » : le texte est remplacé et
+    seuls les mots réellement modifiés passent en rouge. Le rouge reste modifiable au clavier et n'est jamais
+    envoyé à ChatGPT — seul le texte brut part.
+  </p>
+
+</div>
+
+<dialog id="dlgColler">
+  <div class="modal-tete">
+    <h2>Colle la réponse de ChatGPT</h2>
+    <button class="fermer" data-fermer aria-label="Fermer">✕</button>
+  </div>
+  <div class="modal-corps">
+    <p style="margin:0 0 10px;color:var(--encre-douce);font-size:.9rem">Ton navigateur n'autorise pas la lecture directe du presse-papier. Colle le texte ici.</p>
+    <textarea id="zoneColle" spellcheck="false" lang="vi"></textarea>
+  </div>
+  <div class="modal-pied">
+    <button data-fermer>Annuler</button>
+    <button class="principal" id="btnCollerOk">Appliquer</button>
+  </div>
+</dialog>
+
+<dialog id="dlgHisto">
+  <div class="modal-tete">
+    <h2>Historique des versions</h2>
+    <button class="fermer" data-fermer aria-label="Fermer">✕</button>
+  </div>
+  <div class="modal-corps">
+    <ul class="hist" id="listeHisto"></ul>
+  </div>
+  <div class="modal-pied"><button data-fermer>Fermer</button></div>
+</dialog>
+
+<script>
+/* ------------------------------------------------------------------
+   Sửa lỗi — correcteur de frappe vietnamien
+   Application HTML monofichier
+------------------------------------------------------------------- */
+const VERSION = 'V1';
+const HISTORIQUE = [
+  { v:'V1', d:'sept. 2026', t:'Première version : éditeur riche, envoi à ChatGPT, application de la réponse avec les mots corrigés en rouge, résumé des corrections, retour au texte envoyé.' }
+];
+
+const CLE_TEXTE   = 'correcteur-vn.texte';
+const CLE_ENVOYE  = 'correcteur-vn.envoye';
+
+const editeur   = document.getElementById('editeur');
+const etat      = document.getElementById('etat');
+const compteur  = document.getElementById('compteur');
+const resume    = document.getElementById('resume');
+const resumeListe = document.getElementById('resumeListe');
+const resumeTitre = document.getElementById('resumeTitre');
+
+let texteEnvoye = localStorage.getItem(CLE_ENVOYE) || '';
+let htmlAvantCorrection = null;
+
+/* ---------- utilitaires ---------- */
+
+function message(txt, alerte=false){
+  etat.textContent = txt;
+  etat.classList.toggle('alerte', !!alerte);
+}
+
+function echapper(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* Texte brut de l'éditeur : la mise en forme (rouge) est ignorée,
+   ChatGPT ne reçoit donc jamais de balises. */
+function extraireTexte(noeud){
+  let out = '';
+  noeud.childNodes.forEach(n => {
+    if (n.nodeType === Node.TEXT_NODE) {
+      out += n.nodeValue;
+    } else if (n.nodeType === Node.ELEMENT_NODE) {
+      if (n.tagName === 'BR') { out += '\n'; return; }
+      const bloc = /^(DIV|P|LI)$/.test(n.tagName);
+      if (bloc && out && !out.endsWith('\n')) out += '\n';
+      out += extraireTexte(n);
+    }
+  });
+  return out;
+}
+
+function texteEditeur(){
+  return extraireTexte(editeur)
+    .replace(/\u00A0/g, ' ')
+    .normalize('NFC')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+}
+
+/* Découpage en jetons : mots (lettres + signes diacritiques) et séparateurs. */
+function jetons(s){
+  const re = /[\p{L}\p{M}\p{N}'’_]+/gu;
+  const out = [];
+  let dernier = 0, m;
+  while ((m = re.exec(s)) !== null) {
+    if (m.index > dernier) out.push({ mot:false, v: s.slice(dernier, m.index) });
+    out.push({ mot:true, v: m[0] });
+    dernier = m.index + m[0].length;
+  }
+  if (dernier < s.length) out.push({ mot:false, v: s.slice(dernier) });
+  return out;
+}
+
+function mots(s){ return jetons(s).filter(j => j.mot).map(j => j.v); }
+
+/* Alignement mot à mot (plus longue sous-séquence commune).
+   Renvoie, pour chaque mot du texte corrigé, s'il a changé et quel était le mot d'origine. */
+function comparer(avant, apres){
+  const n = avant.length, m = apres.length;
+  const dp = Array.from({length:n+1}, () => new Uint32Array(m+1));
+  for (let i=n-1; i>=0; i--){
+    for (let j=m-1; j>=0; j--){
+      dp[i][j] = (avant[i] === apres[j])
+        ? dp[i+1][j+1] + 1
+        : Math.max(dp[i+1][j], dp[i][j+1]);
+    }
+  }
+  const ops = [];
+  let i=0, j=0;
+  while (i<n && j<m){
+    if (avant[i] === apres[j]) { ops.push({op:'=', a:avant[i], b:apres[j], j}); i++; j++; }
+    else if (dp[i+1][j] >= dp[i][j+1]) { ops.push({op:'-', a:avant[i]}); i++; }
+    else { ops.push({op:'+', b:apres[j], j}); j++; }
+  }
+  while (i<n) { ops.push({op:'-', a:avant[i]}); i++; }
+  while (j<m) { ops.push({op:'+', b:apres[j], j}); j++; }
+
+  // On regroupe suppression + insertion voisines en « remplacement »
+  const marques = new Map();   // index du mot corrigé -> mot d'origine (ou null si ajout)
+  const changements = [];      // pour le résumé
+  for (let k=0; k<ops.length; k++){
+    if (ops[k].op === '-'){
+      const suppr = [];
+      while (k < ops.length && ops[k].op === '-') { suppr.push(ops[k].a); k++; }
+      const ajout = [];
+      while (k < ops.length && ops[k].op === '+') { ajout.push(ops[k]); k++; }
+      k--;
+      ajout.forEach((o, idx) => {
+        const origine = suppr[idx] !== undefined ? suppr[idx] : null;
+        marques.set(o.j, origine);
+        changements.push({ avant: origine, apres: o.b });
+      });
+      if (suppr.length > ajout.length){
+        suppr.slice(ajout.length).forEach(a => changements.push({ avant:a, apres:null }));
+      }
+    } else if (ops[k].op === '+'){
+      marques.set(ops[k].j, null);
+      changements.push({ avant:null, apres: ops[k].b });
+    }
+  }
+  return { marques, changements };
+}
+
+/* Reconstruit le contenu de l'éditeur, mots corrigés en rouge. */
+function afficherCorrige(texteCorrige, marques){
+  const js = jetons(texteCorrige);
+  let idx = 0, html = '';
+  for (const j of js){
+    if (!j.mot){ html += echapper(j.v).replace(/\n/g, '<br>'); continue; }
+    if (marques.has(idx)){
+      const origine = marques.get(idx);
+      const titre = origine ? 'avant : ' + origine : 'mot ajouté';
+      html += '<span class="corr" title="' + echapper(titre) + '">' + echapper(j.v) + '</span>';
+    } else {
+      html += echapper(j.v);
+    }
+    idx++;
+  }
+  editeur.innerHTML = html;
+}
+
+function afficherResume(changements){
+  if (!changements.length){ resume.style.display='none'; return; }
+  resumeTitre.textContent = changements.length === 1 ? '1 correction' : changements.length + ' corrections';
+  resumeListe.innerHTML = changements.map(c => {
+    const a = c.avant ? '<span class="avant">' + echapper(c.avant) + '</span>' : '<span class="avant">—</span>';
+    const b = c.apres ? '<span class="apres">' + echapper(c.apres) + '</span>' : '<span class="avant">supprimé</span>';
+    return '<li>' + a + ' &nbsp;·&nbsp; ' + b + '</li>';
+  }).join('');
+  resume.style.display = 'block';
+}
+
+function majCompteur(){
+  const n = mots(texteEditeur()).length;
+  compteur.textContent = n + (n > 1 ? ' mots' : ' mot');
+}
+
+function sauver(){
+  localStorage.setItem(CLE_TEXTE, editeur.innerHTML);
+}
+
+/* ---------- requête ChatGPT ---------- */
+
+function construireRequete(texte){
+  return [
+    "Voici une phrase (ou un court texte) en vietnamien qui contient peut-être des fautes de frappe.",
+    "",
+    "Corrige uniquement les fautes de frappe : lettres manquantes ou en trop, signes diacritiques et tons mal saisis, mots mal orthographiés.",
+    "",
+    "Règles strictes :",
+    "- ne change pas le nombre de mots ;",
+    "- ne change pas l'ordre des mots ;",
+    "- ne reformule pas, ne traduis pas, n'améliore pas le style ;",
+    "- garde la ponctuation, les majuscules et les retours à la ligne à l'identique ;",
+    "- ne corrige que les mots réellement incorrects, recopie les autres exactement tels quels ;",
+    "- réponds uniquement par le texte corrigé, sans guillemets, sans explication, sans commentaire.",
+    "",
+    "Texte :",
+    texte
+  ].join('\n');
+}
+
+/* Nettoie la réponse : blocs de code, phrase d'introduction, guillemets. */
+function nettoyerReponse(brut){
+  let t = (brut || '').replace(/\r/g, '').trim();
+  t = t.replace(/^```[a-z]*\s*\n?/i, '').replace(/\n?```\s*$/,'').trim();
+  const lignes = t.split('\n');
+  if (lignes.length > 1 && /:\s*$/.test(lignes[0]) && lignes[0].length < 120){
+    lignes.shift();
+    t = lignes.join('\n').trim();
+  }
+  t = t.replace(/^["“«'‘]\s*/, '').replace(/\s*["”»'’]$/, '');
+  return t.normalize('NFC').trim();
+}
+
+async function copier(texte){
+  try {
+    await navigator.clipboard.writeText(texte);
+    return true;
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = texte;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+}
+
+/* ---------- actions ---------- */
+
+document.getElementById('btnEnvoyer').addEventListener('click', async () => {
+  const texte = texteEditeur();
+  if (!texte){ message("Écris d'abord un texte à corriger.", true); return; }
+  const requete = construireRequete(texte);
+  const url = 'https://chatgpt.com/?q=' + encodeURIComponent(requete);
+  window.open(url, '_blank', 'noopener');     // ouvert dans le geste utilisateur
+  const ok = await copier(requete);
+  texteEnvoye = texte;
+  localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  message(ok
+    ? "ChatGPT est ouvert et la requête est aussi dans le presse-papier, au cas où."
+    : "ChatGPT est ouvert. La copie automatique a échoué : utilise « Copier la requête ».");
+});
+
+document.getElementById('btnCopier').addEventListener('click', async () => {
+  const texte = texteEditeur();
+  if (!texte){ message("Écris d'abord un texte à corriger.", true); return; }
+  const ok = await copier(construireRequete(texte));
+  texteEnvoye = texte;
+  localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  message(ok ? "Requête copiée. Colle-la dans ChatGPT." : "La copie a échoué.", !ok);
+});
+
+document.getElementById('btnAppliquer').addEventListener('click', async () => {
+  let brut = null;
+  try { brut = await navigator.clipboard.readText(); } catch (e) { brut = null; }
+  if (brut && brut.trim()) {
+    appliquer(brut);
+  } else {
+    document.getElementById('zoneColle').value = '';
+    document.getElementById('dlgColler').showModal();
+    setTimeout(() => document.getElementById('zoneColle').focus(), 60);
+  }
+});
+
+document.getElementById('btnCollerOk').addEventListener('click', () => {
+  const v = document.getElementById('zoneColle').value;
+  document.getElementById('dlgColler').close();
+  appliquer(v);
+});
+
+function appliquer(brut){
+  const corrige = nettoyerReponse(brut);
+  if (!corrige){ message("Le presse-papier est vide.", true); return; }
+
+  const reference = texteEnvoye || texteEditeur();
+  if (!reference){ message("Aucun texte d'origine à comparer.", true); return; }
+  if (corrige === reference){
+    message("Aucune différence : ChatGPT n'a rien corrigé.");
+    resume.style.display = 'none';
+    return;
+  }
+
+  htmlAvantCorrection = editeur.innerHTML;
+  const avant = mots(reference);
+  const apres = mots(corrige);
+  const { marques, changements } = comparer(avant, apres);
+
+  afficherCorrige(corrige, marques);
+  afficherResume(changements);
+  majCompteur();
+  sauver();
+
+  let msg = changements.length
+    ? (changements.length === 1 ? '1 mot corrigé, en rouge dans le texte.' : changements.length + ' mots corrigés, en rouge dans le texte.')
+    : 'Texte remplacé, sans différence de mots.';
+  if (avant.length !== apres.length){
+    msg += ' Attention : ChatGPT a changé le nombre de mots (' + avant.length + ' → ' + apres.length + ').';
+    message(msg, true);
+  } else {
+    message(msg);
+  }
+}
+
+document.getElementById('btnAccepter').addEventListener('click', () => {
+  const t = texteEditeur();
+  if (!t){ message("Rien à accepter.", true); return; }
+  editeur.textContent = t;
+  resume.style.display = 'none';
+  sauver();
+  message("Corrections acceptées : le rouge est retiré.");
+});
+
+document.getElementById('btnRevenir').addEventListener('click', () => {
+  if (htmlAvantCorrection !== null){
+    editeur.innerHTML = htmlAvantCorrection;
+    htmlAvantCorrection = null;
+  } else if (texteEnvoye){
+    editeur.textContent = texteEnvoye;
+  } else {
+    message("Aucun texte envoyé en mémoire.", true);
+    return;
+  }
+  resume.style.display = 'none';
+  majCompteur();
+  sauver();
+  message("Texte envoyé restauré.");
+});
+
+document.getElementById('btnVider').addEventListener('click', () => {
+  editeur.innerHTML = '';
+  resume.style.display = 'none';
+  htmlAvantCorrection = null;
+  majCompteur();
+  sauver();
+  message("Éditeur vidé.");
+  editeur.focus();
+});
+
+/* Collage dans l'éditeur : toujours en texte simple, pour ne pas importer de mise en forme. */
+editeur.addEventListener('paste', (e) => {
+  e.preventDefault();
+  const t = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, t);
+});
+
+editeur.addEventListener('input', () => { majCompteur(); sauver(); });
+
+/* ---------- fenêtres ---------- */
+
+document.querySelectorAll('[data-fermer]').forEach(b => {
+  b.addEventListener('click', () => b.closest('dialog').close());
+});
+
+document.getElementById('badgeVersion').addEventListener('click', () => {
+  document.getElementById('listeHisto').innerHTML =
+    HISTORIQUE.map(h => '<li><b>' + h.v + '</b> · ' + h.d + '<br>' + h.t + '</li>').join('');
+  document.getElementById('dlgHisto').showModal();
+});
+
+/* ---------- démarrage ---------- */
+
+document.getElementById('badgeVersion').textContent = VERSION;
+const sauvegarde = localStorage.getItem(CLE_TEXTE);
+if (sauvegarde) editeur.innerHTML = sauvegarde;
+majCompteur();
+</script>
 </body>
 </html>
