@@ -170,7 +170,7 @@
 
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
-    <button class="badge" id="badgeVersion" title="Historique des versions">V4</button>
+    <button class="badge" id="badgeVersion" title="Historique des versions">V5</button>
   </header>
   <p class="sous-titre">Écris ton texte vietnamien, envoie-le à ChatGPT, puis recolle sa réponse : les mots corrigés apparaissent en rouge.</p>
 
@@ -205,11 +205,12 @@
   </details>
 
   <details class="section" id="secPropre">
-    <summary>Mettre le texte au propre <span class="note">retirer le rouge</span></summary>
+    <summary>Mettre le texte au propre <span class="note">retirer le rouge, garder ou non les mots barrés</span></summary>
     <div class="section-corps">
-      <p class="expl">Une fois les corrections lues, cette action transforme le texte coloré en texte simple : les mots rouges redeviennent noirs et le texte est prêt pour un nouvel envoi.</p>
+      <p class="expl">Les deux actions transforment le texte coloré en texte simple, prêt pour un nouvel envoi. Elles se distinguent sur les mots barrés que ChatGPT propose de supprimer : la première les garde (c'est aussi ce que fait le bouton principal), la seconde les enlève tous d'un coup. Dans les deux cas, un mot barré que tu as toi-même effacé reste effacé.</p>
       <div class="boutons" style="margin-top:0">
-        <button id="btnAccepter">Accepter les corrections</button>
+        <button id="btnAccepter">Garder les mots barrés</button>
+        <button id="btnAccepterSansBarres">Supprimer les mots barrés</button>
       </div>
     </div>
   </details>
@@ -273,7 +274,7 @@
     du travail : il reprend sa couleur normale et devient « Accepter les corrections » une fois le texte
     corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Dans le texte, un mot en rouge
     a été corrigé, un mot en rouge gras est un ajout proposé par ChatGPT, un mot en rouge barré est une
-    suppression proposée : accepter garde les premiers et retire les barrés. Seul le texte brut part vers
+    suppression proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés toi-même. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part vers
     ChatGPT — le rouge n'est jamais envoyé.
   </p>
 
@@ -310,8 +311,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V4';
+const VERSION = 'V5';
 const HISTORIQUE = [
+  { v:'V5', d:'sept. 2026', t:"L'acceptation conserve désormais par défaut les mots rouges barrés qui n'ont pas été effacés à la main. La section « Mettre le texte au propre » offre les deux choix : garder les mots barrés ou les supprimer tous." },
   { v:'V4', d:'sept. 2026', t:"ChatGPT doit désormais marquer ses suppressions [-mot] et ses ajouts [+mot] au lieu de changer le nombre de mots. Les mots proposés à l'ajout s'affichent en rouge gras, ceux proposés à la suppression en rouge barré ; l'acceptation supprime les barrés et garde les ajoutés." },
   { v:'V3', d:'sept. 2026', t:"Le bouton « Appliquer la correction » devient « Accepter les corrections » une fois la réponse appliquée, et reprend son libellé et sa fonction dès qu'on l'a touché." },
   { v:'V2', d:'sept. 2026', t:"Seuls les deux boutons ChatGPT restent visibles ; les autres actions passent dans des sections repliables. « Appliquer la correction » devient vert vif dès l'envoi de la requête et s'éteint au clic. Nouvelle section GitHub : identifiants du dépôt, envoi et récupération du texte." },
@@ -620,7 +622,7 @@ document.getElementById('btnCopier').addEventListener('click', async () => {
 });
 
 btnAppliquer.addEventListener('click', async () => {
-  if (modeBouton === 'accepter'){ accepterCorrections(); return; }
+  if (modeBouton === 'accepter'){ accepterCorrections(false); return; }
   eteindreAttente();
   let brut = null;
   try { brut = await navigator.clipboard.readText(); } catch (e) { brut = null; }
@@ -687,9 +689,9 @@ function appliquer(brut){
   }
 }
 
-function accepterCorrections(){
+function accepterCorrections(supprimerBarres){
   const copie = editeur.cloneNode(true);
-  copie.querySelectorAll('.suppr').forEach(n => n.remove());   // mots barrés : supprimés
+  if (supprimerBarres) copie.querySelectorAll('.suppr').forEach(n => n.remove());
   let t = extraireTexte(copie)
     .replace(/\u00A0/g, ' ')
     .normalize('NFC')
@@ -699,15 +701,18 @@ function accepterCorrections(){
     .replace(/[ \t]+\n/g, '\n')
     .trim();
   if (!t){ message("Rien à accepter.", true); passerEnModeAppliquer(); return; }
-  editeur.textContent = t;                                     // mots en gras : conservés en texte simple
+  editeur.textContent = t;
   resume.style.display = 'none';
   majCompteur();
   sauver();
   passerEnModeAppliquer();
-  message("Corrections acceptées : mots barrés supprimés, mots ajoutés conservés.");
+  message(supprimerBarres
+    ? "Texte mis au propre : mots barrés supprimés, mots ajoutés conservés."
+    : "Corrections acceptées : le rouge est retiré, les mots barrés que tu n'as pas enlevés sont conservés.");
 }
 
-document.getElementById('btnAccepter').addEventListener('click', accepterCorrections);
+document.getElementById('btnAccepter').addEventListener('click', () => accepterCorrections(false));
+document.getElementById('btnAccepterSansBarres').addEventListener('click', () => accepterCorrections(true));
 
 document.getElementById('btnRevenir').addEventListener('click', () => {
   if (htmlAvantCorrection !== null){
