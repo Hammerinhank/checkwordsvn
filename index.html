@@ -65,6 +65,8 @@
   .carte:focus-within{border-color:#B7C6C0;box-shadow:0 0 0 3px rgba(14,107,87,.10)}
 
   .corr{color:var(--laque);background:var(--laque-fond);border-radius:3px;padding:0 2px}
+  .ajout{color:var(--laque);background:var(--laque-fond);font-weight:700;border-radius:3px;padding:0 2px}
+  .suppr{color:var(--laque);text-decoration:line-through;text-decoration-thickness:2px;opacity:.8}
 
   .boutons{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
   button{
@@ -168,7 +170,7 @@
 
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
-    <button class="badge" id="badgeVersion" title="Historique des versions">V3</button>
+    <button class="badge" id="badgeVersion" title="Historique des versions">V4</button>
   </header>
   <p class="sous-titre">Écris ton texte vietnamien, envoie-le à ChatGPT, puis recolle sa réponse : les mots corrigés apparaissent en rouge.</p>
 
@@ -269,7 +271,9 @@
     « Envoyer à ChatGPT » ouvre ChatGPT avec la requête pré-remplie et allume en vert le bouton
     « Appliquer la correction » : c'est le rappel qu'une réponse est attendue. Ce bouton suit ensuite le cycle
     du travail : il reprend sa couleur normale et devient « Accepter les corrections » une fois le texte
-    corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Seul le texte brut part vers
+    corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Dans le texte, un mot en rouge
+    a été corrigé, un mot en rouge gras est un ajout proposé par ChatGPT, un mot en rouge barré est une
+    suppression proposée : accepter garde les premiers et retire les barrés. Seul le texte brut part vers
     ChatGPT — le rouge n'est jamais envoyé.
   </p>
 
@@ -306,8 +310,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V3';
+const VERSION = 'V4';
 const HISTORIQUE = [
+  { v:'V4', d:'sept. 2026', t:"ChatGPT doit désormais marquer ses suppressions [-mot] et ses ajouts [+mot] au lieu de changer le nombre de mots. Les mots proposés à l'ajout s'affichent en rouge gras, ceux proposés à la suppression en rouge barré ; l'acceptation supprime les barrés et garde les ajoutés." },
   { v:'V3', d:'sept. 2026', t:"Le bouton « Appliquer la correction » devient « Accepter les corrections » une fois la réponse appliquée, et reprend son libellé et sa fonction dès qu'on l'a touché." },
   { v:'V2', d:'sept. 2026', t:"Seuls les deux boutons ChatGPT restent visibles ; les autres actions passent dans des sections repliables. « Appliquer la correction » devient vert vif dès l'envoi de la requête et s'éteint au clic. Nouvelle section GitHub : identifiants du dépôt, envoi et récupération du texte." },
   { v:'V1', d:'sept. 2026', t:'Première version : éditeur riche, envoi à ChatGPT, application de la réponse avec les mots corrigés en rouge, résumé des corrections, retour au texte envoyé.' }
@@ -453,27 +458,68 @@ function comparer(avant, apres){
   return { marques, changements };
 }
 
-function afficherCorrige(texteCorrige, marques){
-  const js = jetons(texteCorrige);
+/* Analyse des marques [-mot] (suppression proposée) et [+mot] (ajout proposé). */
+function analyserMarques(s){
+  const re = /\[\s*([+\-\u2212])\s*([^\]]*?)\s*\]/g;
+  const items = [];
+  let dernier = 0, m;
+  while ((m = re.exec(s)) !== null){
+    if (m.index > dernier) items.push({ type:'texte', v: s.slice(dernier, m.index) });
+    items.push({ type: (m[1] === '+' ? 'ajout' : 'suppr'), v: m[2] });
+    dernier = m.index + m[0].length;
+  }
+  if (dernier < s.length) items.push({ type:'texte', v: s.slice(dernier) });
+  return items;
+}
+
+/* Mots comparables au texte envoyé : tout sauf les ajouts proposés. */
+function motsComparaison(items){
+  const out = [];
+  items.forEach(it => { if (it.type !== 'ajout') mots(it.v).forEach(w => out.push(w)); });
+  return out;
+}
+
+/* Texte des items sans les marques, ajouts compris (pour le test « rien changé »). */
+function texteSansMarques(items){
+  return items.map(it => it.v).join('').replace(/[ \t]{2,}/g, ' ').trim();
+}
+
+function afficherResultat(items, marques){
   let idx = 0, html = '';
-  for (const j of js){
-    if (!j.mot){ html += echapper(j.v).replace(/\n/g, '<br>'); continue; }
-    if (marques.has(idx)){
-      const origine = marques.get(idx);
-      const titre = origine ? 'avant : ' + origine : 'mot ajouté';
-      html += '<span class="corr" title="' + echapper(titre) + '">' + echapper(j.v) + '</span>';
-    } else {
-      html += echapper(j.v);
+  for (const it of items){
+    if (it.type === 'ajout'){
+      html += '<span class="ajout" title="mot proposé à l\'ajout">' + echapper(it.v) + '</span>';
+      continue;
     }
-    idx++;
+    let bloc = '';
+    for (const j of jetons(it.v)){
+      if (!j.mot){ bloc += echapper(j.v).replace(/\n/g, '<br>'); continue; }
+      if (it.type === 'suppr'){
+        bloc += echapper(j.v);
+      } else if (marques.has(idx)){
+        const origine = marques.get(idx);
+        const titre = origine ? 'avant : ' + origine : 'mot ajouté';
+        bloc += '<span class="corr" title="' + echapper(titre) + '">' + echapper(j.v) + '</span>';
+      } else {
+        bloc += echapper(j.v);
+      }
+      idx++;
+    }
+    html += (it.type === 'suppr')
+      ? '<span class="suppr" title="mot proposé à la suppression">' + bloc + '</span>'
+      : bloc;
   }
   editeur.innerHTML = html;
 }
 
 function afficherResume(changements){
   if (!changements.length){ resume.style.display='none'; return; }
-  resumeTitre.textContent = changements.length === 1 ? '1 correction' : changements.length + ' corrections';
+  resumeTitre.textContent = changements.length === 1 ? '1 modification' : changements.length + ' modifications';
   resumeListe.innerHTML = changements.map(c => {
+    if (c.genre === 'ajout')
+      return '<li>à ajouter &nbsp;·&nbsp; <span class="apres">' + echapper(c.apres) + '</span></li>';
+    if (c.genre === 'suppr')
+      return '<li>à supprimer &nbsp;·&nbsp; <span class="avant">' + echapper(c.avant) + '</span></li>';
     const a = c.avant ? '<span class="avant">' + echapper(c.avant) + '</span>' : '<span class="avant">—</span>';
     const b = c.apres ? '<span class="apres">' + echapper(c.apres) + '</span>' : '<span class="avant">supprimé</span>';
     return '<li>' + a + ' &nbsp;·&nbsp; ' + b + '</li>';
@@ -499,12 +545,17 @@ function construireRequete(texte){
     "Corrige uniquement les fautes de frappe : lettres manquantes ou en trop, signes diacritiques et tons mal saisis, mots mal orthographiés.",
     "",
     "Règles strictes :",
-    "- ne change pas le nombre de mots ;",
+    "- ne supprime et n'ajoute jamais un mot directement : le texte doit garder le même nombre de mots, sauf par les marques décrites ci-dessous ;",
+    "- si un mot te semble en trop, ne l'enlève pas : recopie-le entre crochets avec un signe moins juste après le crochet ouvrant, sous la forme [-mot] ;",
+    "- si un mot te semble manquant, ne l'insère pas tel quel : écris-le entre crochets avec un signe plus juste après le crochet ouvrant, sous la forme [+mot], à l'endroit exact où il devrait aller ;",
+    "- n'utilise ces crochets que pour ces deux cas, un seul mot par paire de crochets, et jamais pour un mot simplement mal orthographié (celui-là, corrige-le directement) ;",
     "- ne change pas l'ordre des mots ;",
     "- ne reformule pas, ne traduis pas, n'améliore pas le style ;",
     "- garde la ponctuation, les majuscules et les retours à la ligne à l'identique ;",
     "- ne corrige que les mots réellement incorrects, recopie les autres exactement tels quels ;",
     "- réponds uniquement par le texte corrigé, sans guillemets, sans explication, sans commentaire.",
+    "",
+    "Exemple : si le texte est « tôi đi hoc trường » et qu'il faut corriger « hoc », retirer « trường » et ajouter « rồi », réponds : tôi đi học [-trường] [+rồi]",
     "",
     "Texte :",
     texte
@@ -589,12 +640,17 @@ document.getElementById('btnCollerOk').addEventListener('click', () => {
 });
 
 function appliquer(brut){
-  const corrige = nettoyerReponse(brut);
-  if (!corrige){ message("Le presse-papier est vide.", true); return; }
+  const reponse = nettoyerReponse(brut);
+  if (!reponse){ message("Le presse-papier est vide.", true); return; }
 
   const reference = texteEnvoye || texteEditeur();
   if (!reference){ message("Aucun texte d'origine à comparer.", true); return; }
-  if (corrige === reference){
+
+  const items = analyserMarques(reponse);
+  const ajouts = items.filter(i => i.type === 'ajout');
+  const suppressions = items.filter(i => i.type === 'suppr');
+
+  if (!ajouts.length && !suppressions.length && texteSansMarques(items) === reference){
     message("Aucune différence : ChatGPT n'a rien corrigé.");
     resume.style.display = 'none';
     return;
@@ -602,35 +658,53 @@ function appliquer(brut){
 
   htmlAvantCorrection = editeur.innerHTML;
   const avant = mots(reference);
-  const apres = mots(corrige);
+  const apres = motsComparaison(items);
   const { marques, changements } = comparer(avant, apres);
+  changements.forEach(c => { if (!c.genre) c.genre = 'corr'; });
 
-  afficherCorrige(corrige, marques);
+  ajouts.forEach(i => changements.push({ genre:'ajout', avant:null, apres:i.v }));
+  suppressions.forEach(i => changements.push({ genre:'suppr', avant:i.v, apres:null }));
+
+  afficherResultat(items, marques);
   afficherResume(changements);
   majCompteur();
   sauver();
 
   if (changements.length) passerEnModeAccepter(); else passerEnModeAppliquer();
 
-  let msg = changements.length
-    ? (changements.length === 1 ? '1 mot corrigé, en rouge dans le texte. Touche le bouton pour l\'accepter.' : changements.length + ' mots corrigés, en rouge dans le texte. Touche le bouton pour les accepter.')
-    : 'Texte remplacé, sans différence de mots.';
-  if (avant.length !== apres.length){
-    msg += ' Attention : ChatGPT a changé le nombre de mots (' + avant.length + ' → ' + apres.length + ').';
+  const nbCorr = changements.filter(c => c.genre === 'corr').length;
+  const parts = [];
+  if (nbCorr) parts.push(nbCorr + (nbCorr > 1 ? ' mots corrigés' : ' mot corrigé'));
+  if (ajouts.length) parts.push(ajouts.length + (ajouts.length > 1 ? ' ajouts proposés' : ' ajout proposé') + ' (en gras)');
+  if (suppressions.length) parts.push(suppressions.length + (suppressions.length > 1 ? ' suppressions proposées' : ' suppression proposée') + ' (barré)');
+
+  let msg = parts.length ? parts.join(', ') + '.' : 'Texte remplacé, sans différence de mots.';
+  if (apres.length !== avant.length){
+    msg += " Attention : hors marques, ChatGPT a changé le nombre de mots (" + avant.length + ' → ' + apres.length + ').';
     message(msg, true);
   } else {
-    message(msg);
+    message(msg + (ajouts.length || suppressions.length ? " Touche le bouton pour accepter." : ''));
   }
 }
 
 function accepterCorrections(){
-  const t = texteEditeur();
+  const copie = editeur.cloneNode(true);
+  copie.querySelectorAll('.suppr').forEach(n => n.remove());   // mots barrés : supprimés
+  let t = extraireTexte(copie)
+    .replace(/\u00A0/g, ' ')
+    .normalize('NFC')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+([,.;:!?…»)\]])/g, '$1')
+    .replace(/([«(\[])[ \t]+/g, '$1')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
   if (!t){ message("Rien à accepter.", true); passerEnModeAppliquer(); return; }
-  editeur.textContent = t;
+  editeur.textContent = t;                                     // mots en gras : conservés en texte simple
   resume.style.display = 'none';
+  majCompteur();
   sauver();
   passerEnModeAppliquer();
-  message("Corrections acceptées : le rouge est retiré.");
+  message("Corrections acceptées : mots barrés supprimés, mots ajoutés conservés.");
 }
 
 document.getElementById('btnAccepter').addEventListener('click', accepterCorrections);
@@ -853,7 +927,7 @@ document.getElementById('btnGhRecuperer').addEventListener('click', async () => 
     resume.style.display = 'none';
     majCompteur();
     sauver();
-    if (editeur.querySelector('.corr')) passerEnModeAccepter(); else passerEnModeAppliquer();
+    if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
     const quand = charge.maj ? new Date(charge.maj).toLocaleString('fr-FR') : 'date inconnue';
     messageGit('Texte récupéré (enregistré le ' + quand + ').', 'ok');
     message('Texte chargé depuis GitHub.');
@@ -879,7 +953,7 @@ document.getElementById('badgeVersion').addEventListener('click', () => {
 document.getElementById('badgeVersion').textContent = VERSION;
 const sauvegarde = localStorage.getItem(CLE_TEXTE);
 if (sauvegarde) editeur.innerHTML = sauvegarde;
-if (editeur.querySelector('.corr')) passerEnModeAccepter(); else passerEnModeAppliquer();
+if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
 ghCharger();
 majCompteur();
 </script>
