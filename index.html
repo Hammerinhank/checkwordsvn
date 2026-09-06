@@ -14,6 +14,7 @@
     --jade-clair:#D9E7E2;
     --laque:#B3261E;
     --laque-fond:#FBE9E7;
+    --vif:#00C853;
     --trait:#D5DAD4;
     --rayon:10px;
     --serif: "Charter","Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
@@ -33,33 +34,19 @@
   .page{max-width:760px;margin:0 auto}
 
   header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
-  h1{
-    font-family:var(--serif);
-    font-size:1.7rem;
-    font-weight:600;
-    letter-spacing:-.01em;
-    margin:0;
-  }
+  h1{font-family:var(--serif);font-size:1.7rem;font-weight:600;letter-spacing:-.01em;margin:0}
   h1 .vn{color:var(--jade)}
   .badge{
-    font-size:.78rem;
-    font-weight:600;
-    color:var(--jade);
-    background:var(--jade-clair);
-    border:1px solid #BCD5CD;
-    border-radius:999px;
-    padding:3px 10px;
-    cursor:pointer;
+    font-size:.78rem;font-weight:600;color:var(--jade);
+    background:var(--jade-clair);border:1px solid #BCD5CD;
+    border-radius:999px;padding:3px 10px;cursor:pointer;
   }
   .badge:hover{background:#CCE0D9}
   .sous-titre{color:var(--encre-douce);font-size:.95rem;margin:0 0 20px}
 
   .carte{
-    background:var(--carte);
-    border:1px solid var(--trait);
-    border-radius:var(--rayon);
-    padding:14px 16px;
-    margin-bottom:14px;
+    background:var(--carte);border:1px solid var(--trait);
+    border-radius:var(--rayon);padding:14px 16px;margin-bottom:14px;
   }
 
   .zone-titre{
@@ -69,46 +56,43 @@
   .compteur{font-variant-numeric:tabular-nums}
 
   #editeur{
-    font-family:var(--serif);
-    font-size:1.2rem;
-    line-height:1.75;
-    min-height:170px;
-    max-width:64ch;
-    white-space:pre-wrap;
-    word-wrap:break-word;
-    outline:none;
-    border-left:3px solid var(--jade);
-    padding:2px 0 2px 14px;
+    font-family:var(--serif);font-size:1.2rem;line-height:1.75;
+    min-height:170px;max-width:64ch;
+    white-space:pre-wrap;word-wrap:break-word;outline:none;
+    border-left:3px solid var(--jade);padding:2px 0 2px 14px;
   }
-  #editeur:empty::before{
-    content:attr(data-vide);
-    color:#9AA5A0;
-  }
-  #editeur:focus-visible{outline:none}
+  #editeur:empty::before{content:attr(data-vide);color:#9AA5A0}
   .carte:focus-within{border-color:#B7C6C0;box-shadow:0 0 0 3px rgba(14,107,87,.10)}
 
-  .corr{
-    color:var(--laque);
-    background:var(--laque-fond);
-    border-radius:3px;
-    padding:0 2px;
-  }
+  .corr{color:var(--laque);background:var(--laque-fond);border-radius:3px;padding:0 2px}
 
   .boutons{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
   button{
     font-family:inherit;font-size:.95rem;
-    border-radius:8px;
-    border:1px solid var(--trait);
-    background:var(--carte);
-    color:var(--encre);
-    padding:10px 14px;
-    cursor:pointer;
+    border-radius:8px;border:1px solid var(--trait);
+    background:var(--carte);color:var(--encre);
+    padding:10px 14px;cursor:pointer;
   }
   button:hover{background:#F4F6F3}
   button:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
   button.principal{background:var(--jade);border-color:var(--jade);color:#fff;font-weight:600}
   button.principal:hover{background:#0B5A49}
   button.discret{color:var(--encre-douce)}
+  button.petit{font-size:.88rem;padding:8px 11px}
+
+  /* Bouton en attente de la réponse de ChatGPT */
+  button.attente{
+    background:var(--vif);border-color:#00A844;color:#06210F;
+    font-weight:700;box-shadow:0 0 0 4px rgba(0,200,83,.22);
+  }
+  button.attente:hover{background:#00B84B}
+  @media (prefers-reduced-motion:no-preference){
+    button.attente{animation:respire 1.6s ease-in-out infinite}
+    @keyframes respire{
+      0%,100%{box-shadow:0 0 0 4px rgba(0,200,83,.22)}
+      50%    {box-shadow:0 0 0 9px rgba(0,200,83,.10)}
+    }
+  }
 
   #etat{min-height:1.4em;font-size:.9rem;color:var(--encre-douce);margin-top:10px}
   #etat.alerte{color:var(--laque)}
@@ -120,10 +104,44 @@
   #resume .avant{color:var(--encre-douce);text-decoration:line-through}
   #resume .apres{color:var(--laque);font-weight:600}
 
+  /* Sections repliables */
+  details.section{
+    background:var(--carte);border:1px solid var(--trait);
+    border-radius:var(--rayon);margin-bottom:10px;overflow:hidden;
+  }
+  details.section > summary{
+    list-style:none;cursor:pointer;padding:12px 16px;
+    font-size:.98rem;font-weight:600;
+    display:flex;align-items:center;gap:10px;
+  }
+  details.section > summary::-webkit-details-marker{display:none}
+  details.section > summary::before{
+    content:'▸';color:var(--jade);font-size:.9rem;transition:transform .15s ease;
+  }
+  details.section[open] > summary::before{transform:rotate(90deg)}
+  details.section > summary:hover{background:#F4F6F3}
+  details.section > summary .note{font-weight:400;color:var(--encre-douce);font-size:.87rem}
+  .section-corps{padding:0 16px 16px;border-top:1px solid var(--trait);padding-top:14px}
+  .section-corps p.expl{margin:0 0 10px;color:var(--encre-douce);font-size:.9rem;max-width:60ch}
+
+  /* Formulaire GitHub */
+  .champs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:520px){.champs{grid-template-columns:1fr}}
+  .champ{display:flex;flex-direction:column;gap:4px}
+  .champ label{font-size:.83rem;color:var(--encre-douce)}
+  .champ input{
+    font-family:inherit;font-size:.95rem;padding:9px 10px;
+    border:1px solid var(--trait);border-radius:8px;background:#FCFDFC;color:var(--encre);
+  }
+  .champ input:focus{outline:2px solid var(--jade);outline-offset:1px}
+  .large{grid-column:1 / -1}
+  #etatGit{font-size:.88rem;color:var(--encre-douce);margin-top:10px;min-height:1.3em}
+  #etatGit.alerte{color:var(--laque)}
+  #etatGit.ok{color:var(--jade)}
+
   dialog{
     border:1px solid var(--trait);border-radius:12px;padding:0;
-    max-width:min(560px,92vw);width:100%;
-    background:var(--carte);color:var(--encre);
+    max-width:min(560px,92vw);width:100%;background:var(--carte);color:var(--encre);
   }
   dialog::backdrop{background:rgba(24,33,30,.45)}
   .modal-tete{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--trait)}
@@ -138,11 +156,7 @@
   .hist b{color:var(--jade)}
 
   .aide{font-size:.88rem;color:var(--encre-douce);margin:18px 0 0;max-width:62ch}
-  .aide code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:#E6E9E4;padding:1px 4px;border-radius:4px}
 
-  @media (prefers-reduced-motion:no-preference){
-    .corr{transition:background .2s ease}
-  }
   @media (max-width:520px){
     #editeur{font-size:1.1rem}
     .boutons button{flex:1 1 auto}
@@ -154,7 +168,7 @@
 
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
-    <button class="badge" id="badgeVersion" title="Historique des versions">V1</button>
+    <button class="badge" id="badgeVersion" title="Historique des versions">V2</button>
   </header>
   <p class="sous-titre">Écris ton texte vietnamien, envoie-le à ChatGPT, puis recolle sa réponse : les mots corrigés apparaissent en rouge.</p>
 
@@ -168,13 +182,7 @@
 
   <div class="boutons">
     <button class="principal" id="btnEnvoyer">Envoyer à ChatGPT</button>
-    <button id="btnCopier">Copier la requête</button>
     <button class="principal" id="btnAppliquer">Appliquer la correction</button>
-  </div>
-  <div class="boutons">
-    <button class="discret" id="btnAccepter">Accepter les corrections</button>
-    <button class="discret" id="btnRevenir">Revenir au texte envoyé</button>
-    <button class="discret" id="btnVider">Tout effacer</button>
   </div>
 
   <div id="etat"></div>
@@ -184,11 +192,83 @@
     <ol id="resumeListe"></ol>
   </div>
 
+  <details class="section" id="secRequete">
+    <summary>Envoyer la requête à la main <span class="note">quand ChatGPT est déjà ouvert</span></summary>
+    <div class="section-corps">
+      <p class="expl">Copie la requête complète (texte + consignes de correction) sans ouvrir de nouvel onglet. Le texte est mémorisé comme référence de comparaison, exactement comme avec le bouton d'envoi.</p>
+      <div class="boutons" style="margin-top:0">
+        <button id="btnCopier">Copier la requête</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="section" id="secPropre">
+    <summary>Mettre le texte au propre <span class="note">retirer le rouge</span></summary>
+    <div class="section-corps">
+      <p class="expl">Une fois les corrections lues, cette action transforme le texte coloré en texte simple : les mots rouges redeviennent noirs et le texte est prêt pour un nouvel envoi.</p>
+      <div class="boutons" style="margin-top:0">
+        <button id="btnAccepter">Accepter les corrections</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="section" id="secRetour">
+    <summary>Revenir en arrière <span class="note">annuler ou repartir de zéro</span></summary>
+    <div class="section-corps">
+      <p class="expl">« Revenir au texte envoyé » restaure la version telle qu'elle était avant l'application de la correction. « Tout effacer » vide l'éditeur.</p>
+      <div class="boutons" style="margin-top:0">
+        <button class="discret" id="btnRevenir">Revenir au texte envoyé</button>
+        <button class="discret" id="btnVider">Tout effacer</button>
+      </div>
+    </div>
+  </details>
+
+  <details class="section" id="secGit">
+    <summary>Stocker le texte sur GitHub <span class="note">identifiants, envoi, récupération</span></summary>
+    <div class="section-corps">
+      <p class="expl">Le texte (avec ses mots en rouge), le texte envoyé à ChatGPT et la date sont enregistrés dans un fichier JSON du dépôt. Le jeton reste dans ce navigateur et n'est jamais écrit dans le dépôt : utilise un dépôt privé et un jeton limité à ce dépôt.</p>
+
+      <div class="champs">
+        <div class="champ">
+          <label for="ghUser">Utilisateur ou organisation</label>
+          <input id="ghUser" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="hammerinhank">
+        </div>
+        <div class="champ">
+          <label for="ghRepo">Dépôt</label>
+          <input id="ghRepo" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="mes-textes">
+        </div>
+        <div class="champ">
+          <label for="ghBranche">Branche</label>
+          <input id="ghBranche" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="main" value="main">
+        </div>
+        <div class="champ">
+          <label for="ghChemin">Chemin du fichier</label>
+          <input id="ghChemin" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="correcteur-vietnamien.json" value="correcteur-vietnamien.json">
+        </div>
+        <div class="champ large">
+          <label for="ghToken">Jeton d'accès personnel (droits lecture et écriture sur le contenu)</label>
+          <input id="ghToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+        </div>
+      </div>
+
+      <div class="boutons">
+        <button class="petit" id="btnGhSauverIds">Enregistrer les identifiants</button>
+        <button class="petit" id="btnGhTester">Vérifier l'accès</button>
+        <button class="petit" id="btnGhOublier">Oublier le jeton</button>
+      </div>
+      <div class="boutons" style="margin-top:4px">
+        <button class="principal petit" id="btnGhEnvoyer">Envoyer vers GitHub</button>
+        <button class="petit" id="btnGhRecuperer">Récupérer depuis GitHub</button>
+      </div>
+
+      <div id="etatGit"></div>
+    </div>
+  </details>
+
   <p class="aide">
-    « Envoyer à ChatGPT » copie la requête complète et ouvre ChatGPT dans un nouvel onglet.
-    Copie ensuite la réponse, reviens ici et touche « Appliquer la correction » : le texte est remplacé et
-    seuls les mots réellement modifiés passent en rouge. Le rouge reste modifiable au clavier et n'est jamais
-    envoyé à ChatGPT — seul le texte brut part.
+    « Envoyer à ChatGPT » ouvre ChatGPT avec la requête pré-remplie et allume en vert le bouton
+    « Appliquer la correction » : c'est le rappel qu'une réponse est attendue. Le vert s'éteint dès que tu
+    touches ce bouton. Seul le texte brut part vers ChatGPT — le rouge n'est jamais envoyé.
   </p>
 
 </div>
@@ -224,20 +304,24 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V1';
+const VERSION = 'V2';
 const HISTORIQUE = [
+  { v:'V2', d:'sept. 2026', t:"Seuls les deux boutons ChatGPT restent visibles ; les autres actions passent dans des sections repliables. « Appliquer la correction » devient vert vif dès l'envoi de la requête et s'éteint au clic. Nouvelle section GitHub : identifiants du dépôt, envoi et récupération du texte." },
   { v:'V1', d:'sept. 2026', t:'Première version : éditeur riche, envoi à ChatGPT, application de la réponse avec les mots corrigés en rouge, résumé des corrections, retour au texte envoyé.' }
 ];
 
-const CLE_TEXTE   = 'correcteur-vn.texte';
-const CLE_ENVOYE  = 'correcteur-vn.envoye';
+const CLE_TEXTE  = 'correcteur-vn.texte';
+const CLE_ENVOYE = 'correcteur-vn.envoye';
+const CLE_GIT    = 'correcteur-vn.github';
 
-const editeur   = document.getElementById('editeur');
-const etat      = document.getElementById('etat');
-const compteur  = document.getElementById('compteur');
-const resume    = document.getElementById('resume');
+const editeur     = document.getElementById('editeur');
+const etat        = document.getElementById('etat');
+const etatGit     = document.getElementById('etatGit');
+const compteur    = document.getElementById('compteur');
+const resume      = document.getElementById('resume');
 const resumeListe = document.getElementById('resumeListe');
 const resumeTitre = document.getElementById('resumeTitre');
+const btnAppliquer= document.getElementById('btnAppliquer');
 
 let texteEnvoye = localStorage.getItem(CLE_ENVOYE) || '';
 let htmlAvantCorrection = null;
@@ -249,9 +333,18 @@ function message(txt, alerte=false){
   etat.classList.toggle('alerte', !!alerte);
 }
 
+function messageGit(txt, type=''){
+  etatGit.textContent = txt;
+  etatGit.className = type;
+}
+
 function echapper(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+/* Attente d'une réponse ChatGPT : le bouton d'application passe au vert vif. */
+function armerAttente(){ btnAppliquer.classList.add('attente'); }
+function eteindreAttente(){ btnAppliquer.classList.remove('attente'); }
 
 /* Texte brut de l'éditeur : la mise en forme (rouge) est ignorée,
    ChatGPT ne reçoit donc jamais de balises. */
@@ -294,8 +387,7 @@ function jetons(s){
 
 function mots(s){ return jetons(s).filter(j => j.mot).map(j => j.v); }
 
-/* Alignement mot à mot (plus longue sous-séquence commune).
-   Renvoie, pour chaque mot du texte corrigé, s'il a changé et quel était le mot d'origine. */
+/* Alignement mot à mot (plus longue sous-séquence commune). */
 function comparer(avant, apres){
   const n = avant.length, m = apres.length;
   const dp = Array.from({length:n+1}, () => new Uint32Array(m+1));
@@ -316,9 +408,8 @@ function comparer(avant, apres){
   while (i<n) { ops.push({op:'-', a:avant[i]}); i++; }
   while (j<m) { ops.push({op:'+', b:apres[j], j}); j++; }
 
-  // On regroupe suppression + insertion voisines en « remplacement »
   const marques = new Map();   // index du mot corrigé -> mot d'origine (ou null si ajout)
-  const changements = [];      // pour le résumé
+  const changements = [];
   for (let k=0; k<ops.length; k++){
     if (ops[k].op === '-'){
       const suppr = [];
@@ -342,7 +433,6 @@ function comparer(avant, apres){
   return { marques, changements };
 }
 
-/* Reconstruit le contenu de l'éditeur, mots corrigés en rouge. */
 function afficherCorrige(texteCorrige, marques){
   const js = jetons(texteCorrige);
   let idx = 0, html = '';
@@ -401,7 +491,6 @@ function construireRequete(texte){
   ].join('\n');
 }
 
-/* Nettoie la réponse : blocs de code, phrase d'introduction, guillemets. */
 function nettoyerReponse(brut){
   let t = (brut || '').replace(/\r/g, '').trim();
   t = t.replace(/^```[a-z]*\s*\n?/i, '').replace(/\n?```\s*$/,'').trim();
@@ -432,20 +521,20 @@ async function copier(texte){
   }
 }
 
-/* ---------- actions ---------- */
+/* ---------- actions principales ---------- */
 
 document.getElementById('btnEnvoyer').addEventListener('click', async () => {
   const texte = texteEditeur();
   if (!texte){ message("Écris d'abord un texte à corriger.", true); return; }
   const requete = construireRequete(texte);
-  const url = 'https://chatgpt.com/?q=' + encodeURIComponent(requete);
-  window.open(url, '_blank', 'noopener');     // ouvert dans le geste utilisateur
+  window.open('https://chatgpt.com/?q=' + encodeURIComponent(requete), '_blank', 'noopener');
   const ok = await copier(requete);
   texteEnvoye = texte;
   localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  armerAttente();
   message(ok
-    ? "ChatGPT est ouvert et la requête est aussi dans le presse-papier, au cas où."
-    : "ChatGPT est ouvert. La copie automatique a échoué : utilise « Copier la requête ».");
+    ? "ChatGPT est ouvert et la requête est aussi dans le presse-papier. Reviens ici avec sa réponse."
+    : "ChatGPT est ouvert. La copie automatique a échoué : ouvre « Envoyer la requête à la main ».");
 });
 
 document.getElementById('btnCopier').addEventListener('click', async () => {
@@ -454,10 +543,12 @@ document.getElementById('btnCopier').addEventListener('click', async () => {
   const ok = await copier(construireRequete(texte));
   texteEnvoye = texte;
   localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  if (ok) armerAttente();
   message(ok ? "Requête copiée. Colle-la dans ChatGPT." : "La copie a échoué.", !ok);
 });
 
-document.getElementById('btnAppliquer').addEventListener('click', async () => {
+btnAppliquer.addEventListener('click', async () => {
+  eteindreAttente();
   let brut = null;
   try { brut = await navigator.clipboard.readText(); } catch (e) { brut = null; }
   if (brut && brut.trim()) {
@@ -543,7 +634,7 @@ document.getElementById('btnVider').addEventListener('click', () => {
   editeur.focus();
 });
 
-/* Collage dans l'éditeur : toujours en texte simple, pour ne pas importer de mise en forme. */
+/* Collage dans l'éditeur : toujours en texte simple. */
 editeur.addEventListener('paste', (e) => {
   e.preventDefault();
   const t = (e.clipboardData || window.clipboardData).getData('text/plain');
@@ -551,6 +642,194 @@ editeur.addEventListener('paste', (e) => {
 });
 
 editeur.addEventListener('input', () => { majCompteur(); sauver(); });
+
+/* ---------- GitHub ---------- */
+
+const ghChamps = {
+  user:    document.getElementById('ghUser'),
+  repo:    document.getElementById('ghRepo'),
+  branche: document.getElementById('ghBranche'),
+  chemin:  document.getElementById('ghChemin'),
+  token:   document.getElementById('ghToken')
+};
+
+function ghLire(){
+  return {
+    user:    ghChamps.user.value.trim(),
+    repo:    ghChamps.repo.value.trim(),
+    branche: ghChamps.branche.value.trim() || 'main',
+    chemin:  ghChamps.chemin.value.trim().replace(/^\/+/, '') || 'correcteur-vietnamien.json',
+    token:   ghChamps.token.value.trim()
+  };
+}
+
+function ghCharger(){
+  try {
+    const c = JSON.parse(localStorage.getItem(CLE_GIT) || '{}');
+    if (c.user)    ghChamps.user.value = c.user;
+    if (c.repo)    ghChamps.repo.value = c.repo;
+    if (c.branche) ghChamps.branche.value = c.branche;
+    if (c.chemin)  ghChamps.chemin.value = c.chemin;
+    if (c.token)   ghChamps.token.value = c.token;
+  } catch (e) {}
+}
+
+function ghEnregistrer(){
+  const c = ghLire();
+  if (!c.user || !c.repo){ messageGit("Renseigne au moins l'utilisateur et le dépôt.", 'alerte'); return false; }
+  localStorage.setItem(CLE_GIT, JSON.stringify(c));
+  return true;
+}
+
+function ghValider(c){
+  if (!c.user || !c.repo){ messageGit("Utilisateur et dépôt sont obligatoires.", 'alerte'); return false; }
+  if (!c.token){ messageGit("Le jeton d'accès est obligatoire pour lire et écrire.", 'alerte'); return false; }
+  return true;
+}
+
+function ghEnTetes(c){
+  return {
+    'Authorization': 'Bearer ' + c.token,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+
+function enBase64(s){
+  const octets = new TextEncoder().encode(s);
+  let bin = '';
+  for (let i=0; i<octets.length; i+=0x8000){
+    bin += String.fromCharCode.apply(null, octets.subarray(i, i+0x8000));
+  }
+  return btoa(bin);
+}
+
+function deBase64(b){
+  const bin = atob((b || '').replace(/\s/g, ''));
+  const octets = new Uint8Array(bin.length);
+  for (let i=0; i<bin.length; i++) octets[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(octets);
+}
+
+function urlContenu(c){
+  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
+         encodeURIComponent(c.repo) + '/contents/' +
+         c.chemin.split('/').map(encodeURIComponent).join('/');
+}
+
+async function ghLireFichier(c){
+  const r = await fetch(urlContenu(c) + '?ref=' + encodeURIComponent(c.branche) + '&t=' + Date.now(),
+                        { headers: ghEnTetes(c), cache:'no-store' });
+  if (r.status === 404) return null;               // fichier absent
+  if (!r.ok) throw new Error(await ghErreur(r));
+  return await r.json();
+}
+
+async function ghErreur(r){
+  let d = '';
+  try { const j = await r.json(); d = j.message || ''; } catch (e) {}
+  if (r.status === 401) return "Jeton refusé (401) : vérifie qu'il est valide et non expiré.";
+  if (r.status === 403) return "Accès refusé (403) : le jeton n'a pas les droits sur ce dépôt, ou le quota est atteint.";
+  if (r.status === 404) return "Introuvable (404) : dépôt, branche ou chemin inexistant, ou dépôt privé hors de portée du jeton.";
+  if (r.status === 409) return "Conflit (409) : le dépôt est peut-être vide, ou la branche n'existe pas encore.";
+  if (r.status === 422) return "Requête refusée (422) : " + (d || 'branche ou chemin invalide') + '.';
+  return 'Erreur GitHub ' + r.status + (d ? ' : ' + d : '') + '.';
+}
+
+document.getElementById('btnGhSauverIds').addEventListener('click', () => {
+  if (ghEnregistrer()) messageGit('Identifiants enregistrés dans ce navigateur.', 'ok');
+});
+
+document.getElementById('btnGhOublier').addEventListener('click', () => {
+  ghChamps.token.value = '';
+  const c = ghLire();
+  localStorage.setItem(CLE_GIT, JSON.stringify(c));
+  messageGit('Jeton effacé de ce navigateur.', 'ok');
+});
+
+document.getElementById('btnGhTester').addEventListener('click', async () => {
+  const c = ghLire();
+  if (!ghValider(c)) return;
+  messageGit('Vérification en cours…');
+  try {
+    const r = await fetch('https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' + encodeURIComponent(c.repo),
+                          { headers: ghEnTetes(c), cache:'no-store' });
+    if (!r.ok) { messageGit(await ghErreur(r), 'alerte'); return; }
+    const d = await r.json();
+    const ecriture = d.permissions && d.permissions.push;
+    const b = await fetch('https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' + encodeURIComponent(c.repo) +
+                          '/branches/' + encodeURIComponent(c.branche), { headers: ghEnTetes(c), cache:'no-store' });
+    const brancheOk = b.ok;
+    ghEnregistrer();
+    messageGit(
+      'Dépôt accessible' + (d.private ? ' (privé)' : ' (public)') + '. ' +
+      'Écriture : ' + (ecriture ? 'autorisée' : 'refusée par le jeton') + '. ' +
+      'Branche « ' + c.branche + ' » : ' + (brancheOk ? 'trouvée' : 'introuvable') + '.',
+      (ecriture && brancheOk) ? 'ok' : 'alerte'
+    );
+  } catch (e) {
+    messageGit('Réseau indisponible : ' + e.message, 'alerte');
+  }
+});
+
+document.getElementById('btnGhEnvoyer').addEventListener('click', async () => {
+  const c = ghLire();
+  if (!ghValider(c)) return;
+  ghEnregistrer();
+  messageGit('Envoi en cours…');
+  try {
+    const existant = await ghLireFichier(c);
+    const charge = {
+      texte:   editeur.innerHTML,
+      brut:    texteEditeur(),
+      envoye:  texteEnvoye,
+      version: VERSION,
+      maj:     new Date().toISOString()
+    };
+    const r = await fetch(urlContenu(c), {
+      method: 'PUT',
+      headers: Object.assign({ 'Content-Type':'application/json' }, ghEnTetes(c)),
+      body: JSON.stringify({
+        message: 'Correcteur vietnamien — mise à jour du ' + new Date().toLocaleString('fr-FR'),
+        content: enBase64(JSON.stringify(charge, null, 2)),
+        branch:  c.branche,
+        sha:     existant ? existant.sha : undefined
+      })
+    });
+    if (!r.ok) { messageGit(await ghErreur(r), 'alerte'); return; }
+    messageGit('Texte enregistré dans ' + c.repo + '/' + c.chemin + '.', 'ok');
+  } catch (e) {
+    messageGit('Envoi impossible : ' + e.message, 'alerte');
+  }
+});
+
+document.getElementById('btnGhRecuperer').addEventListener('click', async () => {
+  const c = ghLire();
+  if (!ghValider(c)) return;
+  ghEnregistrer();
+  messageGit('Récupération en cours…');
+  try {
+    const f = await ghLireFichier(c);
+    if (!f){ messageGit('Aucun fichier « ' + c.chemin + ' » sur cette branche pour le moment.', 'alerte'); return; }
+    const contenu = f.content ? deBase64(f.content) : await (await fetch(f.download_url, {cache:'no-store'})).text();
+    let charge;
+    try { charge = JSON.parse(contenu); }
+    catch (e) { charge = { texte: contenu, brut: contenu, envoye: '' }; }
+
+    htmlAvantCorrection = editeur.innerHTML;
+    editeur.innerHTML = charge.texte || echapper(charge.brut || '');
+    texteEnvoye = charge.envoye || '';
+    localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+    resume.style.display = 'none';
+    majCompteur();
+    sauver();
+    const quand = charge.maj ? new Date(charge.maj).toLocaleString('fr-FR') : 'date inconnue';
+    messageGit('Texte récupéré (enregistré le ' + quand + ').', 'ok');
+    message('Texte chargé depuis GitHub.');
+  } catch (e) {
+    messageGit('Récupération impossible : ' + e.message, 'alerte');
+  }
+});
 
 /* ---------- fenêtres ---------- */
 
@@ -569,6 +848,7 @@ document.getElementById('badgeVersion').addEventListener('click', () => {
 document.getElementById('badgeVersion').textContent = VERSION;
 const sauvegarde = localStorage.getItem(CLE_TEXTE);
 if (sauvegarde) editeur.innerHTML = sauvegarde;
+ghCharger();
 majCompteur();
 </script>
 </body>
