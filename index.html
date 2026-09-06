@@ -168,7 +168,7 @@
 
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
-    <button class="badge" id="badgeVersion" title="Historique des versions">V2</button>
+    <button class="badge" id="badgeVersion" title="Historique des versions">V3</button>
   </header>
   <p class="sous-titre">Écris ton texte vietnamien, envoie-le à ChatGPT, puis recolle sa réponse : les mots corrigés apparaissent en rouge.</p>
 
@@ -267,8 +267,10 @@
 
   <p class="aide">
     « Envoyer à ChatGPT » ouvre ChatGPT avec la requête pré-remplie et allume en vert le bouton
-    « Appliquer la correction » : c'est le rappel qu'une réponse est attendue. Le vert s'éteint dès que tu
-    touches ce bouton. Seul le texte brut part vers ChatGPT — le rouge n'est jamais envoyé.
+    « Appliquer la correction » : c'est le rappel qu'une réponse est attendue. Ce bouton suit ensuite le cycle
+    du travail : il reprend sa couleur normale et devient « Accepter les corrections » une fois le texte
+    corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Seul le texte brut part vers
+    ChatGPT — le rouge n'est jamais envoyé.
   </p>
 
 </div>
@@ -304,8 +306,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V2';
+const VERSION = 'V3';
 const HISTORIQUE = [
+  { v:'V3', d:'sept. 2026', t:"Le bouton « Appliquer la correction » devient « Accepter les corrections » une fois la réponse appliquée, et reprend son libellé et sa fonction dès qu'on l'a touché." },
   { v:'V2', d:'sept. 2026', t:"Seuls les deux boutons ChatGPT restent visibles ; les autres actions passent dans des sections repliables. « Appliquer la correction » devient vert vif dès l'envoi de la requête et s'éteint au clic. Nouvelle section GitHub : identifiants du dépôt, envoi et récupération du texte." },
   { v:'V1', d:'sept. 2026', t:'Première version : éditeur riche, envoi à ChatGPT, application de la réponse avec les mots corrigés en rouge, résumé des corrections, retour au texte envoyé.' }
 ];
@@ -345,6 +348,23 @@ function echapper(s){
 /* Attente d'une réponse ChatGPT : le bouton d'application passe au vert vif. */
 function armerAttente(){ btnAppliquer.classList.add('attente'); }
 function eteindreAttente(){ btnAppliquer.classList.remove('attente'); }
+
+/* Le bouton principal a deux états : il applique la réponse de ChatGPT,
+   puis propose d'accepter les corrections, puis retrouve son rôle initial. */
+let modeBouton = 'appliquer';
+
+function passerEnModeAccepter(){
+  modeBouton = 'accepter';
+  eteindreAttente();
+  btnAppliquer.textContent = 'Accepter les corrections';
+  btnAppliquer.title = 'Retirer le rouge et garder le texte corrigé';
+}
+
+function passerEnModeAppliquer(){
+  modeBouton = 'appliquer';
+  btnAppliquer.textContent = 'Appliquer la correction';
+  btnAppliquer.title = 'Reprendre la réponse de ChatGPT depuis le presse-papier';
+}
 
 /* Texte brut de l'éditeur : la mise en forme (rouge) est ignorée,
    ChatGPT ne reçoit donc jamais de balises. */
@@ -531,6 +551,7 @@ document.getElementById('btnEnvoyer').addEventListener('click', async () => {
   const ok = await copier(requete);
   texteEnvoye = texte;
   localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  passerEnModeAppliquer();
   armerAttente();
   message(ok
     ? "ChatGPT est ouvert et la requête est aussi dans le presse-papier. Reviens ici avec sa réponse."
@@ -543,11 +564,12 @@ document.getElementById('btnCopier').addEventListener('click', async () => {
   const ok = await copier(construireRequete(texte));
   texteEnvoye = texte;
   localStorage.setItem(CLE_ENVOYE, texteEnvoye);
-  if (ok) armerAttente();
+  if (ok){ passerEnModeAppliquer(); armerAttente(); }
   message(ok ? "Requête copiée. Colle-la dans ChatGPT." : "La copie a échoué.", !ok);
 });
 
 btnAppliquer.addEventListener('click', async () => {
+  if (modeBouton === 'accepter'){ accepterCorrections(); return; }
   eteindreAttente();
   let brut = null;
   try { brut = await navigator.clipboard.readText(); } catch (e) { brut = null; }
@@ -588,8 +610,10 @@ function appliquer(brut){
   majCompteur();
   sauver();
 
+  if (changements.length) passerEnModeAccepter(); else passerEnModeAppliquer();
+
   let msg = changements.length
-    ? (changements.length === 1 ? '1 mot corrigé, en rouge dans le texte.' : changements.length + ' mots corrigés, en rouge dans le texte.')
+    ? (changements.length === 1 ? '1 mot corrigé, en rouge dans le texte. Touche le bouton pour l\'accepter.' : changements.length + ' mots corrigés, en rouge dans le texte. Touche le bouton pour les accepter.')
     : 'Texte remplacé, sans différence de mots.';
   if (avant.length !== apres.length){
     msg += ' Attention : ChatGPT a changé le nombre de mots (' + avant.length + ' → ' + apres.length + ').';
@@ -599,14 +623,17 @@ function appliquer(brut){
   }
 }
 
-document.getElementById('btnAccepter').addEventListener('click', () => {
+function accepterCorrections(){
   const t = texteEditeur();
-  if (!t){ message("Rien à accepter.", true); return; }
+  if (!t){ message("Rien à accepter.", true); passerEnModeAppliquer(); return; }
   editeur.textContent = t;
   resume.style.display = 'none';
   sauver();
+  passerEnModeAppliquer();
   message("Corrections acceptées : le rouge est retiré.");
-});
+}
+
+document.getElementById('btnAccepter').addEventListener('click', accepterCorrections);
 
 document.getElementById('btnRevenir').addEventListener('click', () => {
   if (htmlAvantCorrection !== null){
@@ -621,6 +648,7 @@ document.getElementById('btnRevenir').addEventListener('click', () => {
   resume.style.display = 'none';
   majCompteur();
   sauver();
+  passerEnModeAppliquer();
   message("Texte envoyé restauré.");
 });
 
@@ -630,6 +658,8 @@ document.getElementById('btnVider').addEventListener('click', () => {
   htmlAvantCorrection = null;
   majCompteur();
   sauver();
+  eteindreAttente();
+  passerEnModeAppliquer();
   message("Éditeur vidé.");
   editeur.focus();
 });
@@ -823,6 +853,7 @@ document.getElementById('btnGhRecuperer').addEventListener('click', async () => 
     resume.style.display = 'none';
     majCompteur();
     sauver();
+    if (editeur.querySelector('.corr')) passerEnModeAccepter(); else passerEnModeAppliquer();
     const quand = charge.maj ? new Date(charge.maj).toLocaleString('fr-FR') : 'date inconnue';
     messageGit('Texte récupéré (enregistré le ' + quand + ').', 'ok');
     message('Texte chargé depuis GitHub.');
@@ -848,6 +879,7 @@ document.getElementById('badgeVersion').addEventListener('click', () => {
 document.getElementById('badgeVersion').textContent = VERSION;
 const sauvegarde = localStorage.getItem(CLE_TEXTE);
 if (sauvegarde) editeur.innerHTML = sauvegarde;
+if (editeur.querySelector('.corr')) passerEnModeAccepter(); else passerEnModeAppliquer();
 ghCharger();
 majCompteur();
 </script>
