@@ -87,6 +87,7 @@
   .boutons{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
   /* Le bouton OK est repoussé contre le bord droit de la page. */
   #btnOk{margin-left:auto;min-width:76px}
+  #btnEnvoiRequete{margin-left:auto}
   button{
     font-family:inherit;font-size:.95rem;
     border-radius:8px;border:1px solid var(--trait);
@@ -249,6 +250,7 @@
     #editeur{font-size:1.1rem}
     .boutons button{flex:1 1 auto}
     #btnOk{flex:0 0 auto;margin-left:auto}
+    #btnEnvoiRequete{flex:0 0 auto;margin-left:auto}
   }
 </style>
 </head>
@@ -258,7 +260,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V14</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V15</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -591,8 +593,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V14';
+const VERSION = 'V15';
 const HISTORIQUE = [
+  { v:'V15', d:'sept. 2026', t:"La requête de ponctuation impose maintenant le français pour les commentaires sur les tournures à revoir : seule la phrase citée reste en vietnamien, et les mots vietnamiens cités sont traduits. Le bouton « Envoi à … » est cadré sur le bord droit de sa section." },
   { v:'V14', d:'sept. 2026', t:"Un bouton « Envoi à … » à droite des deux boutons de copie transmet la requête qui vient d'être copiée, celle de correction comme celle de ponctuation : ouverture de l'IA avec la requête pré-remplie, ou appel direct en mode API. Il passe au vert vif dès qu'une requête est copiée et retrouve sa couleur normale au premier clic, où qu'il soit fait." },
   { v:'V13', d:'sept. 2026', t:"Un second bouton « Copier la requête de ponctuation » dans « Envoyer la requête à la main ». Il demande à l'IA de découper un texte non ponctué en phrases, d'y placer la ponctuation et les majuscules et d'en corriger les défauts de casse, sans ajouter ni retirer de mot — puis, dans la seconde partie de la réponse, de commenter les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct." },
   { v:'V12', d:'sept. 2026', t:"Un bouton « OK », cadré à droite sur la ligne des boutons principaux, s'allume en vert vif juste après l'application d'une correction. Un clic dessus fait la même chose que « Supprimer les mots barrés » ; il retrouve sa couleur normale au clic, ou dès qu'on clique ailleurs dans la page." },
@@ -1375,14 +1378,16 @@ function construireRequetePonctuation(texte){
     "",
     "Ta réponse comporte deux parties, séparées par une ligne contenant exactement " + SEPARATEUR + " :",
     "",
-    "PREMIÈRE PARTIE, avant cette ligne : le texte ponctué, et rien d'autre — sans guillemets d'encadrement, sans explication, sans commentaire.",
+    "PREMIÈRE PARTIE, avant cette ligne : le texte ponctué en vietnamien, et rien d'autre — sans guillemets d'encadrement, sans explication, sans commentaire.",
     "",
-    "SECONDE PARTIE, après cette ligne : uniquement les phrases qui auraient besoin d'un changement allant au-delà de la ponctuation et de la casse pour être du vietnamien correct. Une phrase par ligne, sous la forme : la phrase concernée, puis une flèche →, puis en français ce qui ne va pas et la formulation correcte attendue. Si la ponctuation a suffi partout, écris seulement RAS sur une ligne.",
+    "SECONDE PARTIE, après cette ligne : uniquement les phrases qui auraient besoin d'un changement allant au-delà de la ponctuation et de la casse pour être du vietnamien correct. Une phrase par ligne, sous la forme : la phrase vietnamienne concernée, puis une flèche →, puis l'explication. Si la ponctuation a suffi partout, écris seulement RAS sur une ligne.",
+    "",
+    "Langue de cette seconde partie : le français, impérativement. Tu t'adresses à un francophone qui apprend le vietnamien. Après la flèche, tout est rédigé en français : ce qui ne va pas dans la phrase, pourquoi, et la formulation correcte attendue. Le vietnamien n'y apparaît que pour citer un mot ou une tournure, toujours entre guillemets et suivi de sa traduction française. Une explication rédigée en vietnamien serait inutilisable : n'en écris aucune.",
     "",
     "Exemple de réponse complète :",
     "Tôi đi học rồi. Bạn có khỏe không?",
     SEPARATEUR,
-    "bạn có khỏe không → il manque le pronom d'adresse ; un natif dirait « anh có khỏe không ».",
+    "bạn có khỏe không → le pronom « bạn » est neutre et sonne scolaire ici ; en s'adressant à un homme un peu plus âgé, un natif dirait plutôt « anh có khỏe không » (« comment allez-vous ? »).",
     "",
     "Texte :",
     texte
