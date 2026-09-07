@@ -164,6 +164,13 @@
   #editeur.lecture{position:relative;max-height:52vh;overflow-y:auto;scroll-behavior:smooth}
   #motsListe.compact{position:relative;overflow-y:auto;scroll-behavior:smooth}
   #motsListe.compact li{cursor:pointer}
+  /* En lecture, OK devient un bandeau pleine largeur entre les deux fenêtres. */
+  #boutonsPrincipaux.lecture #btnEnvoyer,
+  #boutonsPrincipaux.lecture #btnAppliquer{display:none}
+  #boutonsPrincipaux.lecture #btnOk{
+    flex:1 1 100%;width:100%;margin:0;padding:7px 14px;min-width:0;letter-spacing:.04em;
+  }
+  #editeur.lecture{caret-color:transparent}
 
   /* Sections repliables */
   details.section{
@@ -282,7 +289,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V20</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V21</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -296,7 +303,7 @@
     <div id="editeur" contenteditable="true" spellcheck="false" lang="vi" data-vide="Chào bạn, hôm nay bạn thế nào ?"></div>
   </div>
 
-  <div class="boutons">
+  <div class="boutons" id="boutonsPrincipaux">
     <button class="principal" id="btnEnvoyer">Envoyer à ChatGPT</button>
     <button class="principal" id="btnAppliquer">Appliquer la correction</button>
     <button class="principal" id="btnOk" title="Accepter la correction et supprimer les mots barrés">OK</button>
@@ -468,7 +475,8 @@
         coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras — et inversement, cliquer
         une explication centre le mot dans le texte, un nouveau clic allant à son occurrence suivante.
         Pendant cette lecture, le texte et les explications forment deux fenêtres qui défilent chacune de
-        leur côté. La couleur s'efface avec « OK » ou « Accepter les corrections ». La section « Changer de texte » permet de tenir plusieurs
+        leur côté, séparées par le bandeau « OK » ; le texte n'est pas modifiable, si bien que le clavier
+        ne s'ouvre pas sur un mot cliqué. Le bandeau « OK » rend au texte sa couleur et ses boutons. La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -642,8 +650,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V20';
+const VERSION = 'V21';
 const HISTORIQUE = [
+  { v:'V21', d:'sept. 2026', t:"Pendant la lecture du vocabulaire, le texte n'est plus modifiable : sur iPhone, cliquer un mot n'ouvre plus le clavier. Les deux autres boutons s'effacent et « OK » devient un bandeau pleine largeur, un peu moins haut, qui sépare la fenêtre de texte de celle des explications. Le clic sur ce bandeau rend tout à la normale." },
   { v:'V20', d:'sept. 2026', t:"Lecture du vocabulaire repensée pour les petits écrans : le texte devient une fenêtre qui défile seule et garde l'essentiel de la hauteur, tandis que la fenêtre du bas se réduit à la hauteur de l'explication choisie. Un clic sur un mot coloré affiche son explication et met le mot en gras ; un clic sur une explication centre le mot verticalement dans le texte, les clics suivants passant aux occurrences suivantes. Toutes les occurrences d'un mot sont désormais colorées, et le gras tombe au premier clic ailleurs." },
   { v:'V19', d:'sept. 2026', t:"Troisième requête dans « Envoyer la requête à la main » : le vocabulaire. L'IA renvoie le texte inchangé, les mots difficiles pour un niveau A2 entourés d'accolades, et leur explication en français. La page colore ces mots en bleu dans l'éditeur ; un clic sur l'un d'eux fait défiler la fenêtre du bas jusqu'à son explication et la met en gras. Si le texte renvoyé s'écarte de l'original, le texte d'origine est conservé et les mots y sont retrouvés par recherche." },
   { v:'V18', d:'sept. 2026', t:"La requête de ponctuation demande une troisième partie : la traduction française du texte ponctué, introduite par sa propre ligne repère. Elle s'affiche dans une nouvelle section « Traduction en français », sous les tournures à revoir, dans la même fenêtre que les modifications." },
@@ -1817,6 +1826,9 @@ function surlignerMots(reference, mots){
 function quitterModeMots(){
   const liste = document.getElementById('motsListe');
   editeur.classList.remove('lecture');
+  editeur.setAttribute('contenteditable', 'true');
+  document.getElementById('boutonsPrincipaux').classList.remove('lecture');
+  btnOk.textContent = 'OK';
   liste.classList.remove('compact');
   liste.style.maxHeight = '';
   editeur.style.removeProperty('min-height');
@@ -1836,6 +1848,10 @@ function afficherMots(mots){
   }
   bloc.hidden = false;
   editeur.classList.add('lecture');
+  /* Pas de saisie pendant la lecture : sur iPhone, le clavier ne s'ouvre pas. */
+  editeur.setAttribute('contenteditable', 'false');
+  document.getElementById('boutonsPrincipaux').classList.add('lecture');
+  btnOk.textContent = 'OK — revenir au texte';
   liste.classList.add('compact');
   liste.style.maxHeight = Math.round(window.innerHeight * 0.30) + 'px';
   occurrences = {};
