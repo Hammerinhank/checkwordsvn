@@ -131,6 +131,13 @@
   #resume li{margin:3px 0;font-family:var(--serif);font-size:1.02rem}
   #resume .avant{color:var(--encre-douce);text-decoration:line-through}
   #resume .apres{color:var(--laque);font-weight:600}
+  #blocRemarques{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
+  #blocCorrections[hidden] + #blocRemarques{border-top:none;margin-top:0;padding-top:0}
+  #remarquesListe{margin:0;padding-left:20px}
+  #remarquesListe li{margin:6px 0;font-size:.95rem}
+  #remarquesListe .phrase{font-family:var(--serif);font-size:1.02rem;display:block}
+  #remarquesListe .quoi{color:var(--encre-douce);display:block}
+  #remarquesListe li.rien{list-style:none;margin-left:-20px;color:var(--jade)}
 
   /* Sections repliables */
   details.section{
@@ -248,7 +255,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V10</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V11</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -270,14 +277,20 @@
   <div id="etat"></div>
 
   <div class="carte" id="resume">
-    <h2 id="resumeTitre">Corrections</h2>
-    <ol id="resumeListe"></ol>
+    <div id="blocCorrections">
+      <h2 id="resumeTitre">Corrections</h2>
+      <ol id="resumeListe"></ol>
+    </div>
+    <div id="blocRemarques" hidden>
+      <h2 id="remarquesTitre">Tournures à revoir</h2>
+      <ul id="remarquesListe"></ul>
+    </div>
   </div>
 
   <details class="section" id="secRequete">
     <summary>Envoyer la requête à la main <span class="note">quand <span class="nom-ia">ChatGPT</span> est déjà ouvert</span></summary>
     <div class="section-corps">
-      <p class="expl">Copie la requête complète (texte + consignes de correction) sans ouvrir de nouvel onglet. Le texte est mémorisé comme référence de comparaison, exactement comme avec le bouton d'envoi. Utile aussi en mode API, si tu préfères ponctuellement passer par l'interface web.</p>
+      <p class="expl">Copie la requête complète (texte + consignes de correction + demande de relecture du naturel) sans ouvrir de nouvel onglet. Le texte est mémorisé comme référence de comparaison, exactement comme avec le bouton d'envoi. Utile aussi en mode API, si tu préfères ponctuellement passer par l'interface web.</p>
       <div class="boutons" style="margin-top:0">
         <button id="btnCopier">Copier la requête</button>
       </div>
@@ -386,7 +399,10 @@
         a été corrigé, un mot en rouge gras est un ajout proposé, un mot en rouge barré est une suppression
         proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés
         toi-même. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part
-        vers l'IA — le rouge n'est jamais envoyé. La section « Changer de texte » permet de tenir plusieurs
+        vers l'IA — le rouge n'est jamais envoyé. La requête demande en outre à l'IA une seconde partie de
+        réponse, séparée par une ligne repère : les phrases qui, même sans faute de frappe, seraient
+        bancales ou sonneraient étrangement à l'oreille d'un natif. Elles s'affichent sous la liste des
+        modifications, dans « Tournures à revoir », et ne touchent jamais au texte de l'éditeur. La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -560,8 +576,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V10';
+const VERSION = 'V11';
 const HISTORIQUE = [
+  { v:'V11', d:'sept. 2026', t:"La requête demande à l'IA une réponse en deux parties séparées par une ligne repère : le texte corrigé, puis les phrases qui restent bancales ou sonneraient étrangement à un locuteur natif, chacune avec ce qui cloche et la formulation attendue. Cette seconde partie s'affiche dans une nouvelle section « Tournures à revoir », sous la liste des modifications, sans jamais modifier le texte de l'éditeur." },
   { v:'V10', d:'sept. 2026', t:"Le bouton d'envoi nomme désormais le texte concerné (« Envoyer « … » vers GitHub »), annonce « Envoi en cours… » pendant l'opération, puis affiche son verdict pendant trois secondes : vert vif en cas de réussite, rouge vif en cas d'échec, avant de reprendre son libellé." },
   { v:'V9', d:'sept. 2026', t:"L'application gère plusieurs textes. La section « Changer de texte » offre une liste déroulante classée par ordre alphabétique, et permet de créer, renommer ou supprimer un texte — renommage et suppression étant répercutés dans le dépôt. Tous les textes tiennent dans un seul fichier JSON, mais l'envoi et la récupération ne portent que sur le texte affiché. La barre verticale à gauche de l'éditeur passe à l'orange tant que le texte affiché diffère de sa dernière version échangée avec GitHub, et redevient verte dès sa sauvegarde." },
   { v:'V8', d:'sept. 2026', t:"Le bouton « Envoyer vers GitHub » passe en tête de la section GitHub, avant les explications et les identifiants. Le mode d'emploi qui fermait la page devient une section repliable « Comment fonctionne cette page », toujours en dernière position." },
@@ -942,8 +959,36 @@ function afficherResultat(items, marques){
   editeur.innerHTML = html;
 }
 
-function afficherResume(changements){
-  if (!changements.length){ resume.style.display='none'; return; }
+function afficherRemarques(remarques, presente){
+  const bloc = document.getElementById('blocRemarques');
+  const liste = document.getElementById('remarquesListe');
+  const titre = document.getElementById('remarquesTitre');
+  if (!presente){ bloc.hidden = true; liste.innerHTML = ''; return false; }
+  bloc.hidden = false;
+  if (!remarques.length){
+    titre.textContent = 'Tournures';
+    liste.innerHTML = '<li class="rien">Rien à signaler : ' + echapper(nomIA()) +
+                      ' trouve les phrases correctes et naturelles.</li>';
+    return true;
+  }
+  titre.textContent = remarques.length === 1
+    ? '1 tournure à revoir'
+    : remarques.length + ' tournures à revoir';
+  liste.innerHTML = remarques.map(r =>
+    '<li>' +
+    (r.phrase ? '<span class="phrase" lang="vi">' + echapper(r.phrase) + '</span>' : '') +
+    '<span class="quoi">' + echapper(r.quoi) + '</span>' +
+    '</li>').join('');
+  return true;
+}
+
+function afficherResume(changements, remarques, presente){
+  const avecRemarques = afficherRemarques(remarques || [], !!presente);
+  const blocCorr = document.getElementById('blocCorrections');
+  blocCorr.hidden = !changements.length;
+  if (!changements.length && !avecRemarques){ resume.style.display='none'; return; }
+  resume.style.display = 'block';
+  if (!changements.length) return;
   resumeTitre.textContent = changements.length === 1 ? '1 modification' : changements.length + ' modifications';
   resumeListe.innerHTML = changements.map(c => {
     if (c.genre === 'ajout')
@@ -954,7 +999,6 @@ function afficherResume(changements){
     const b = c.apres ? '<span class="apres">' + echapper(c.apres) + '</span>' : '<span class="avant">supprimé</span>';
     return '<li>' + a + ' &nbsp;·&nbsp; ' + b + '</li>';
   }).join('');
-  resume.style.display = 'block';
 }
 
 function majCompteur(){
@@ -1202,7 +1246,11 @@ document.getElementById('btnTexteSupprimer').addEventListener('click', async () 
 
 /* ---------- requête vers l'IA ---------- */
 
-const CONSIGNE = "Tu es un correcteur de fautes de frappe en vietnamien. Tu réponds uniquement par le texte corrigé, sans explication ni commentaire.";
+const CONSIGNE = "Tu es un correcteur de fautes de frappe en vietnamien. Tu réponds exactement dans le format en deux parties qui t'est demandé, sans rien y ajouter.";
+
+/* Ligne qui sépare le texte corrigé des remarques sur le naturel des phrases. */
+const SEPARATEUR = '===REMARQUES===';
+const RE_SEPARATEUR = /^[ \t]*=+[ \t]*REMARQUES[ \t]*=+[ \t]*$/im;
 
 function construireRequete(texte){
   return [
@@ -1219,13 +1267,47 @@ function construireRequete(texte){
     "- ne reformule pas, ne traduis pas, n'améliore pas le style ;",
     "- garde la ponctuation, les majuscules et les retours à la ligne à l'identique ;",
     "- ne corrige que les mots réellement incorrects, recopie les autres exactement tels quels ;",
-    "- réponds uniquement par le texte corrigé, sans guillemets, sans explication, sans commentaire.",
+    "- pas de guillemets, pas d'explication et pas de commentaire dans cette partie.",
     "",
-    "Exemple : si le texte est « tôi đi hoc trường » et qu'il faut corriger « hoc », retirer « trường » et ajouter « rồi », réponds : tôi đi học [-trường] [+rồi]",
+    "Ta réponse comporte deux parties, séparées par une ligne contenant exactement " + SEPARATEUR + " :",
+    "",
+    "PREMIÈRE PARTIE, avant cette ligne : le texte corrigé selon les règles ci-dessus, et rien d'autre.",
+    "",
+    "SECONDE PARTIE, après cette ligne : les phrases qui, même une fois les fautes de frappe corrigées, ne sont pas grammaticalement correctes ou sonneraient bizarrement à l'oreille d'un locuteur natif vietnamien. Une phrase par ligne, sous la forme : la phrase concernée, puis une flèche →, puis en français ce qui cloche et la formulation naturelle attendue. N'y mets rien d'autre, et surtout aucune correction déjà faite dans la première partie. Si toutes les phrases sont correctes et naturelles, écris seulement RAS sur une ligne.",
+    "",
+    "Exemple de réponse complète :",
+    "tôi đi học [-trường] [+rồi]",
+    SEPARATEUR,
+    "tôi đi học rồi → correct et naturel dans une conversation ; à l'écrit soutenu on préférerait « tôi đã đi học ».",
     "",
     "Texte :",
     texte
   ].join('\n');
+}
+
+/* La réponse arrive en deux parties : le texte corrigé, puis les remarques. */
+function decouperReponse(brut){
+  const t = (brut || '').replace(/\r/g, '');
+  const m = t.match(RE_SEPARATEUR);
+  if (!m) return { texte: t, remarques: [], presente: false };
+  const i = t.indexOf(m[0]);
+  return {
+    texte: t.slice(0, i),
+    remarques: analyserRemarques(t.slice(i + m[0].length)),
+    presente: true
+  };
+}
+
+function analyserRemarques(bloc){
+  return (bloc || '').split('\n')
+    .map(l => l.replace(/^\s*[-–—*•]\s*/, '').replace(/^\s*\d+[.)]\s*/, '').trim())
+    .filter(l => l && !/^```/.test(l))
+    .filter(l => !/^(ras|r\.a\.s\.?|rien à signaler|aucune remarque|aucune)\s*[.!]?$/i.test(l))
+    .map(l => {
+      const c = l.split(/\s*(?:→|->|=>)\s*/);
+      if (c.length >= 2 && c[0].trim()) return { phrase: c[0].trim(), quoi: c.slice(1).join(' → ').trim() };
+      return { phrase: '', quoi: l };
+    });
 }
 
 function nettoyerReponse(brut){
@@ -1417,7 +1499,8 @@ document.getElementById('btnCollerOk').addEventListener('click', () => {
 });
 
 function appliquer(brut){
-  const reponse = nettoyerReponse(brut);
+  const parties = decouperReponse(brut);
+  const reponse = nettoyerReponse(parties.texte);
   if (!reponse){ message("Le presse-papier est vide.", true); return; }
 
   const reference = texteEnvoye || texteEditeur();
@@ -1428,8 +1511,11 @@ function appliquer(brut){
   const suppressions = items.filter(i => i.type === 'suppr');
 
   if (!ajouts.length && !suppressions.length && texteSansMarques(items) === reference){
-    message("Aucune différence : " + nomIA() + " n'a rien corrigé.");
-    resume.style.display = 'none';
+    afficherResume([], parties.remarques, parties.presente);
+    message("Aucune différence : " + nomIA() + " n'a rien corrigé." +
+            (parties.remarques.length
+              ? ' ' + parties.remarques.length + (parties.remarques.length > 1 ? ' tournures signalées' : ' tournure signalée') + ' plus bas.'
+              : ''));
     return;
   }
 
@@ -1443,7 +1529,7 @@ function appliquer(brut){
   suppressions.forEach(i => changements.push({ genre:'suppr', avant:i.v, apres:null }));
 
   afficherResultat(items, marques);
-  afficherResume(changements);
+  afficherResume(changements, parties.remarques, parties.presente);
   majCompteur();
   sauver();
 
@@ -1454,6 +1540,7 @@ function appliquer(brut){
   if (nbCorr) parts.push(nbCorr + (nbCorr > 1 ? ' mots corrigés' : ' mot corrigé'));
   if (ajouts.length) parts.push(ajouts.length + (ajouts.length > 1 ? ' ajouts proposés' : ' ajout proposé') + ' (en gras)');
   if (suppressions.length) parts.push(suppressions.length + (suppressions.length > 1 ? ' suppressions proposées' : ' suppression proposée') + ' (barré)');
+  if (parties.remarques.length) parts.push(parties.remarques.length + (parties.remarques.length > 1 ? ' tournures signalées' : ' tournure signalée'));
 
   let msg = parts.length ? parts.join(', ') + '.' : 'Texte remplacé, sans différence de mots.';
   if (apres.length !== avant.length){
