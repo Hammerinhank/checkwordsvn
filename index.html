@@ -15,6 +15,7 @@
     --laque:#B3261E;
     --laque-fond:#FBE9E7;
     --vif:#00C853;
+    --ambre:#C2710C;
     --trait:#D5DAD4;
     --rayon:10px;
     --serif: "Charter","Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
@@ -73,6 +74,10 @@
     border-left:3px solid var(--jade);padding:2px 0 2px 14px;
   }
   #editeur:empty::before{content:attr(data-vide);color:#9AA5A0}
+  /* Barre de gauche : verte quand le texte est à jour sur GitHub, orange sinon. */
+  #editeur.modifie{border-left-color:var(--ambre)}
+  .pastille{font-size:.82rem;color:var(--encre-douce)}
+  .pastille.modifie{color:var(--ambre);font-weight:600}
   .carte:focus-within{border-color:#B7C6C0;box-shadow:0 0 0 3px rgba(14,107,87,.10)}
 
   .corr{color:var(--laque);background:var(--laque-fond);border-radius:3px;padding:0 2px}
@@ -147,11 +152,15 @@
     font-family:inherit;font-size:.95rem;padding:9px 10px;
     border:1px solid var(--trait);border-radius:8px;background:#FCFDFC;color:var(--encre);
   }
-  .champ input:focus{outline:2px solid var(--jade);outline-offset:1px}
+  .champ select{
+    font-family:inherit;font-size:.95rem;padding:9px 10px;
+    border:1px solid var(--trait);border-radius:8px;background:#FCFDFC;color:var(--encre);
+  }
+  .champ input:focus,.champ select:focus{outline:2px solid var(--jade);outline-offset:1px}
   .large{grid-column:1 / -1}
-  #etatGit{font-size:.88rem;color:var(--encre-douce);margin-top:10px;min-height:1.3em}
-  #etatGit.alerte{color:var(--laque)}
-  #etatGit.ok{color:var(--jade)}
+  #etatGit,#etatTextes{font-size:.88rem;color:var(--encre-douce);margin-top:10px;min-height:1.3em}
+  #etatGit.alerte,#etatTextes.alerte{color:var(--laque)}
+  #etatGit.ok,#etatTextes.ok{color:var(--jade)}
 
   dialog{
     border:1px solid var(--trait);border-radius:12px;padding:0;
@@ -230,7 +239,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V8</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V9</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -238,7 +247,7 @@
 
   <div class="carte">
     <div class="zone-titre">
-      <span>Ton texte</span>
+      <span><b id="titreTexte">Ton texte</b> <span class="pastille" id="etatSync"></span></span>
       <span class="compteur" id="compteur">0 mot</span>
     </div>
     <div id="editeur" contenteditable="true" spellcheck="false" lang="vi" data-vide="Chào bạn, hôm nay bạn thế nào ?"></div>
@@ -288,6 +297,28 @@
     </div>
   </details>
 
+  <details class="section" id="secTextes">
+    <summary>Changer de texte <span class="note">plusieurs textes, chacun sauvegardé à part</span></summary>
+    <div class="section-corps">
+      <p class="expl">La page peut tenir plusieurs textes, rangés par ordre alphabétique. Un seul est affiché dans l'éditeur à la fois ; les autres restent en mémoire dans ce navigateur avec leur propre historique. Chaque texte s'envoie et se récupère séparément dans le dépôt GitHub : la barre à gauche de l'éditeur est orange tant que le texte affiché diffère de sa dernière version échangée avec GitHub, et redevient verte dès qu'il y est enregistré. Renommer ou supprimer un texte ici le renomme ou le supprime aussi dans le dépôt.</p>
+
+      <div class="champs">
+        <div class="champ large">
+          <label for="listeTextes">Texte sur lequel travailler</label>
+          <select id="listeTextes"></select>
+        </div>
+      </div>
+
+      <div class="boutons">
+        <button class="petit" id="btnTexteNouveau">Nouveau texte</button>
+        <button class="petit" id="btnTexteRenommer">Renommer</button>
+        <button class="petit" id="btnTexteSupprimer">Supprimer</button>
+      </div>
+
+      <div id="etatTextes"></div>
+    </div>
+  </details>
+
   <details class="section" id="secGit">
     <summary>Stocker le texte sur GitHub <span class="note">identifiants, envoi, récupération</span></summary>
     <div class="section-corps">
@@ -295,7 +326,7 @@
         <button class="principal petit" id="btnGhEnvoyer">Envoyer vers GitHub</button>
       </div>
 
-      <p class="expl">Le texte (avec ses mots en rouge), le texte envoyé à l'IA et la date sont enregistrés dans un fichier JSON du dépôt. Ni le jeton GitHub ni les clés API ne sont écrits dans le dépôt : ils restent dans ce navigateur. Utilise un dépôt privé et un jeton limité à ce dépôt.</p>
+      <p class="expl">Tous les textes tiennent dans un seul fichier JSON du dépôt, rangés sous leur nom. Les deux boutons ne concernent que le texte affiché : l'envoi remplace sa seule entrée dans le fichier et laisse les autres intactes, la récupération ne relit que la sienne. Chaque entrée contient le texte avec ses mots en rouge, le texte envoyé à l'IA et la date. Ni le jeton GitHub ni les clés API ne sont écrits dans le dépôt : ils restent dans ce navigateur. Utilise un dépôt privé et un jeton limité à ce dépôt.</p>
 
       <div class="champs">
         <div class="champ">
@@ -346,7 +377,10 @@
         a été corrigé, un mot en rouge gras est un ajout proposé, un mot en rouge barré est une suppression
         proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés
         toi-même. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part
-        vers l'IA — le rouge n'est jamais envoyé.
+        vers l'IA — le rouge n'est jamais envoyé. La section « Changer de texte » permet de tenir plusieurs
+        textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
+        GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
+        version enregistrée dans le dépôt.
       </p>
     </div>
   </details>
@@ -483,6 +517,24 @@
   </div>
 </dialog>
 
+<dialog id="dlgNom">
+  <div class="modal-tete">
+    <h2 id="titreNom">Nom du texte</h2>
+    <button class="fermer" data-fermer aria-label="Fermer">✕</button>
+  </div>
+  <div class="modal-corps">
+    <div class="champ">
+      <label for="champNom">Nom du texte (il sert aussi de clé dans le fichier GitHub)</label>
+      <input id="champNom" type="text" autocomplete="off" spellcheck="false" placeholder="Lettre à Mai">
+    </div>
+    <div id="etatNom" style="font-size:.88rem;color:var(--laque);min-height:1.3em;margin-top:8px"></div>
+  </div>
+  <div class="modal-pied">
+    <button data-fermer>Annuler</button>
+    <button class="principal" id="btnNomOk">Valider</button>
+  </div>
+</dialog>
+
 <dialog id="dlgHisto">
   <div class="modal-tete">
     <h2>Historique des versions</h2>
@@ -499,8 +551,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V8';
+const VERSION = 'V9';
 const HISTORIQUE = [
+  { v:'V9', d:'sept. 2026', t:"L'application gère plusieurs textes. La section « Changer de texte » offre une liste déroulante classée par ordre alphabétique, et permet de créer, renommer ou supprimer un texte — renommage et suppression étant répercutés dans le dépôt. Tous les textes tiennent dans un seul fichier JSON, mais l'envoi et la récupération ne portent que sur le texte affiché. La barre verticale à gauche de l'éditeur passe à l'orange tant que le texte affiché diffère de sa dernière version échangée avec GitHub, et redevient verte dès sa sauvegarde." },
   { v:'V8', d:'sept. 2026', t:"Le bouton « Envoyer vers GitHub » passe en tête de la section GitHub, avant les explications et les identifiants. Le mode d'emploi qui fermait la page devient une section repliable « Comment fonctionne cette page », toujours en dernière position." },
   { v:'V7', d:'sept. 2026', t:"Nouveau mode « appel direct par API » pour les deux IA : la correction revient en une à deux secondes et s'écrit seule dans l'éditeur, sans onglet ni copier-coller. La fenêtre de paramétrage accueille la clé API, le choix du modèle, un test de clé, et trois explications repliables : la lenteur de Claude en mode onglet, le fonctionnement et le coût des API, le choix du modèle." },
   { v:'V6', d:'sept. 2026', t:"Une icône de paramétrage ⚙️ ouvre une fenêtre de réglages où l'on choisit l'IA de vérification : ChatGPT ou Claude. L'envoi ouvre le site choisi et tous les libellés de la page prennent son nom ; le choix est mémorisé dans ce navigateur." },
@@ -515,6 +568,8 @@ const CLE_TEXTE  = 'correcteur-vn.texte';
 const CLE_ENVOYE = 'correcteur-vn.envoye';
 const CLE_GIT    = 'correcteur-vn.github';
 const CLE_CONF   = 'correcteur-vn.conf';
+const CLE_DOCS   = 'correcteur-vn.textes';
+const TEXTE_DEFAUT = 'Mon texte';
 
 const editeur     = document.getElementById('editeur');
 const etat        = document.getElementById('etat');
@@ -896,9 +951,218 @@ function majCompteur(){
   compteur.textContent = n + (n > 1 ? ' mots' : ' mot');
 }
 
-function sauver(){
-  localStorage.setItem(CLE_TEXTE, editeur.innerHTML);
+/* ---------- textes multiples ----------
+   Chaque texte est une entrée indépendante : son contenu, le dernier texte
+   envoyé à l'IA, et l'empreinte de la dernière version échangée avec GitHub
+   (champ « sync »), qui sert à colorer la barre de gauche.               */
+
+let docs = { courant: TEXTE_DEFAUT, docs: {} };
+
+function docNeuf(){
+  return { texte:'', envoye:'', sync:null, maj:new Date().toISOString() };
 }
+
+function parNom(a, b){ return a.localeCompare(b, 'fr', { sensitivity:'base' }); }
+function nomsTextes(){ return Object.keys(docs.docs).sort(parNom); }
+function docCourant(){ return docs.docs[docs.courant]; }
+function docsEnregistrer(){ localStorage.setItem(CLE_DOCS, JSON.stringify(docs)); }
+
+function docsCharger(){
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(CLE_DOCS) || 'null'); } catch (e) {}
+  if (!d || typeof d !== 'object' || !d.docs || typeof d.docs !== 'object'){
+    /* Reprise du texte unique des versions précédentes. */
+    d = { courant: TEXTE_DEFAUT, docs: {} };
+    d.docs[TEXTE_DEFAUT] = docNeuf();
+    d.docs[TEXTE_DEFAUT].texte  = localStorage.getItem(CLE_TEXTE) || '';
+    d.docs[TEXTE_DEFAUT].envoye = localStorage.getItem(CLE_ENVOYE) || '';
+  }
+  if (!Object.keys(d.docs).length){
+    d.docs[TEXTE_DEFAUT] = docNeuf();
+    d.courant = TEXTE_DEFAUT;
+  }
+  docs = d;
+  if (!docCourant()) docs.courant = nomsTextes()[0];
+}
+
+/* Le HTML est comparé après normalisation par le navigateur : deux écritures
+   différentes du même contenu ne comptent pas comme une modification. */
+function normaliser(html){
+  const d = document.createElement('div');
+  d.innerHTML = html || '';
+  return d.innerHTML;
+}
+
+function estModifie(d){
+  if (!d) return false;
+  if (d.sync === null || d.sync === undefined) return (d.texte || '') !== '';
+  return normaliser(d.texte) !== normaliser(d.sync);
+}
+
+function sauver(){
+  const d = docCourant();
+  if (!d) return;
+  d.texte  = editeur.innerHTML;
+  d.envoye = texteEnvoye;
+  d.maj    = new Date().toISOString();
+  docsEnregistrer();
+  localStorage.setItem(CLE_TEXTE, d.texte);       /* compatibilité */
+  localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  majEtatTexte();
+}
+
+/* Nom affiché, pastille d'état et couleur de la barre de gauche. */
+function majEtatTexte(){
+  const d = docCourant();
+  const modifie = estModifie(d);
+  const pastille = document.getElementById('etatSync');
+  editeur.classList.toggle('modifie', modifie);
+  document.getElementById('titreTexte').textContent = docs.courant;
+  if (d && (d.sync === null || d.sync === undefined)){
+    pastille.textContent = modifie ? '· jamais envoyé sur GitHub' : '· vide';
+  } else {
+    pastille.textContent = modifie ? '· modifié depuis la sauvegarde' : '· à jour sur GitHub';
+  }
+  pastille.classList.toggle('modifie', modifie);
+  majListeTextes();
+}
+
+let signatureListe = null;
+
+function majListeTextes(){
+  const noms = nomsTextes();
+  const sig = docs.courant + '||' + noms.map(n => n + (estModifie(docs.docs[n]) ? '*' : '')).join('|');
+  if (sig === signatureListe) return;
+  signatureListe = sig;
+  document.getElementById('listeTextes').innerHTML = noms.map(n =>
+    '<option value="' + echapper(n) + '"' + (n === docs.courant ? ' selected' : '') + '>' +
+    echapper(n) + (estModifie(docs.docs[n]) ? ' — modifié' : '') + '</option>').join('');
+}
+
+function messageTextes(txt, type=''){
+  const e = document.getElementById('etatTextes');
+  e.textContent = txt;
+  e.className = type;
+}
+
+/* Affiche un texte de la liste ; celui qui était en cours est conservé tel quel. */
+function afficherDoc(nom, msg){
+  const d = docs.docs[nom];
+  if (!d) return;
+  docs.courant = nom;
+  texteEnvoye = d.envoye || '';
+  htmlAvantCorrection = null;
+  editeur.innerHTML = d.texte || '';
+  resume.style.display = 'none';
+  eteindreAttente();
+  if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
+  majCompteur();
+  docsEnregistrer();
+  localStorage.setItem(CLE_TEXTE, d.texte || '');
+  localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  majEtatTexte();
+  if (msg) message(msg);
+}
+
+document.getElementById('listeTextes').addEventListener('change', (e) => {
+  const nom = e.target.value;
+  if (nom === docs.courant) return;
+  sauver();
+  messageTextes('');
+  afficherDoc(nom, 'Texte affiché : ' + nom + '.');
+});
+
+/* Fenêtre de saisie du nom, partagée par la création et le renommage. */
+let actionNom = null;
+
+function demanderNom(titre, valeur, action){
+  actionNom = action;
+  document.getElementById('titreNom').textContent = titre;
+  document.getElementById('etatNom').textContent = '';
+  const champ = document.getElementById('champNom');
+  champ.value = valeur || '';
+  document.getElementById('dlgNom').showModal();
+  setTimeout(() => { champ.focus(); champ.select(); }, 40);
+}
+
+function validerNom(){
+  const nom = document.getElementById('champNom').value.trim().replace(/\s+/g, ' ');
+  const etatNom = document.getElementById('etatNom');
+  if (!nom){ etatNom.textContent = 'Donne un nom à ce texte.'; return; }
+  if (docs.docs[nom] && nom !== docs.courant){ etatNom.textContent = 'Ce nom est déjà utilisé.'; return; }
+  document.getElementById('dlgNom').close();
+  const action = actionNom;
+  actionNom = null;
+  if (action) action(nom);
+}
+
+document.getElementById('btnNomOk').addEventListener('click', validerNom);
+document.getElementById('champNom').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter'){ e.preventDefault(); validerNom(); }
+});
+
+function nomLibre(base){
+  if (!docs.docs[base]) return base;
+  let i = 2;
+  while (docs.docs[base + ' ' + i]) i++;
+  return base + ' ' + i;
+}
+
+document.getElementById('btnTexteNouveau').addEventListener('click', () => {
+  demanderNom('Nouveau texte', nomLibre('Nouveau texte'), (nom) => {
+    sauver();
+    docs.docs[nom] = docNeuf();
+    afficherDoc(nom);
+    messageTextes('Texte « ' + nom + " » créé. Il n'existera dans le dépôt qu'après un envoi.", 'ok');
+    message('Nouveau texte : ' + nom + '.');
+    editeur.focus();
+  });
+});
+
+document.getElementById('btnTexteRenommer').addEventListener('click', () => {
+  const ancien = docs.courant;
+  demanderNom('Renommer « ' + ancien + ' »', ancien, async (nom) => {
+    if (nom === ancien) return;
+    sauver();
+    docs.docs[nom] = docs.docs[ancien];
+    delete docs.docs[ancien];
+    docs.courant = nom;
+    docsEnregistrer();
+    majEtatTexte();
+    messageTextes('Texte renommé en « ' + nom + ' ». Mise à jour du dépôt…');
+    await ghModifierDepot(
+      (dep) => {
+        if (!dep.textes[ancien]) return false;
+        dep.textes[nom] = dep.textes[ancien];
+        delete dep.textes[ancien];
+        return true;
+      },
+      'renommage de « ' + ancien + ' » en « ' + nom + ' »',
+      'Renommé ici et dans le dépôt GitHub.',
+      "Renommé ici ; ce texte n'était pas encore dans le dépôt."
+    );
+  });
+});
+
+document.getElementById('btnTexteSupprimer').addEventListener('click', async () => {
+  const nom = docs.courant;
+  if (!confirm('Supprimer le texte « ' + nom + ' » ici et dans le dépôt GitHub ?\nCette action est définitive.')) return;
+  delete docs.docs[nom];
+  if (!Object.keys(docs.docs).length) docs.docs[TEXTE_DEFAUT] = docNeuf();
+  docsEnregistrer();
+  afficherDoc(nomsTextes()[0]);
+  messageTextes('Texte « ' + nom + ' » supprimé ici. Mise à jour du dépôt…');
+  await ghModifierDepot(
+    (dep) => {
+      if (!dep.textes[nom]) return false;
+      delete dep.textes[nom];
+      return true;
+    },
+    'suppression de « ' + nom + ' »',
+    'Supprimé ici et dans le dépôt GitHub.',
+    "Supprimé ici ; ce texte n'était pas dans le dépôt."
+  );
+});
 
 /* ---------- requête vers l'IA ---------- */
 
@@ -1033,7 +1297,7 @@ async function corrigerParApi(){
 
   const requete = construireRequete(texte);
   texteEnvoye = texte;
-  localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  sauver();
   eteindreAttente();
   const libelle = btnEnvoyer.textContent;
   btnEnvoyer.disabled = true;
@@ -1078,7 +1342,7 @@ btnEnvoyer.addEventListener('click', async () => {
   window.open(ia().url(requete), '_blank', 'noopener');
   const ok = await copier(requete);
   texteEnvoye = texte;
-  localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  sauver();
   passerEnModeAppliquer();
   armerAttente();
   message(ok
@@ -1091,7 +1355,7 @@ document.getElementById('btnCopier').addEventListener('click', async () => {
   if (!texte){ message("Écris d'abord un texte à corriger.", true); return; }
   const ok = await copier(construireRequete(texte));
   texteEnvoye = texte;
-  localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  sauver();
   if (ok){ passerEnModeAppliquer(); armerAttente(); }
   message(ok ? "Requête copiée. Colle-la dans " + nomIA() + "." : "La copie a échoué.", !ok);
 });
@@ -1301,6 +1565,63 @@ function urlContenu(c){
          c.chemin.split('/').map(encodeURIComponent).join('/');
 }
 
+/* Le fichier du dépôt contient tous les textes, rangés sous leur nom. */
+function depotVide(){
+  return { application:'correcteur-vietnamien', version:VERSION, maj:new Date().toISOString(), textes:{} };
+}
+
+async function lireDepot(c){
+  const f = await ghLireFichier(c);
+  if (!f) return { fichier:null, depot: depotVide() };
+  let brut = '';
+  if (f.content) brut = deBase64(f.content);
+  else if (f.download_url) brut = await (await fetch(f.download_url, {cache:'no-store'})).text();
+  let dep = null;
+  try { dep = JSON.parse(brut); } catch (e) {}
+  if (!dep || typeof dep !== 'object') return { fichier:f, depot: depotVide() };
+  if (!dep.textes || typeof dep.textes !== 'object'){
+    /* Ancien format : un seul texte à la racine du fichier. Il est repris
+       sous le nom du texte affiché au moment de la lecture. */
+    const ancien = dep;
+    dep = depotVide();
+    if (ancien.texte || ancien.brut) dep.textes[docs.courant] = ancien;
+  }
+  return { fichier:f, depot: dep };
+}
+
+async function ghEcrire(c, dep, commit, sha){
+  dep.version = VERSION;
+  dep.maj = new Date().toISOString();
+  const r = await fetch(urlContenu(c), {
+    method: 'PUT',
+    headers: Object.assign({ 'Content-Type':'application/json' }, ghEnTetes(c)),
+    body: JSON.stringify({
+      message: 'Correcteur vietnamien — ' + commit,
+      content: enBase64(JSON.stringify(dep, null, 2)),
+      branch:  c.branche,
+      sha:     sha || undefined
+    })
+  });
+  if (!r.ok) throw new Error(await ghErreur(r));
+}
+
+/* Renommage et suppression : le fichier est relu, modifié, puis réécrit. */
+async function ghModifierDepot(modif, commit, msgOk, msgAbsent){
+  const c = ghLire();
+  if (!c.user || !c.repo || !c.token){
+    messageTextes('Modification locale seulement : les identifiants GitHub ne sont pas renseignés.', 'alerte');
+    return;
+  }
+  try {
+    const { fichier, depot } = await lireDepot(c);
+    if (!fichier || !modif(depot)){ messageTextes(msgAbsent); return; }
+    await ghEcrire(c, depot, commit, fichier.sha);
+    messageTextes(msgOk, 'ok');
+  } catch (e) {
+    messageTextes('Dépôt non mis à jour : ' + e.message, 'alerte');
+  }
+}
+
 async function ghLireFichier(c){
   const r = await fetch(urlContenu(c) + '?ref=' + encodeURIComponent(c.branche) + '&t=' + Date.now(),
                         { headers: ghEnTetes(c), cache:'no-store' });
@@ -1360,10 +1681,12 @@ document.getElementById('btnGhEnvoyer').addEventListener('click', async () => {
   const c = ghLire();
   if (!ghValider(c)) return;
   ghEnregistrer();
-  messageGit('Envoi en cours…');
+  sauver();
+  const nom = docs.courant;
+  messageGit('Envoi de « ' + nom + ' » en cours…');
   try {
-    const existant = await ghLireFichier(c);
-    const charge = {
+    const { fichier, depot } = await lireDepot(c);
+    depot.textes[nom] = {
       texte:   editeur.innerHTML,
       brut:    texteEditeur(),
       envoye:  texteEnvoye,
@@ -1373,18 +1696,14 @@ document.getElementById('btnGhEnvoyer').addEventListener('click', async () => {
       version: VERSION,
       maj:     new Date().toISOString()
     };
-    const r = await fetch(urlContenu(c), {
-      method: 'PUT',
-      headers: Object.assign({ 'Content-Type':'application/json' }, ghEnTetes(c)),
-      body: JSON.stringify({
-        message: 'Correcteur vietnamien — mise à jour du ' + new Date().toLocaleString('fr-FR'),
-        content: enBase64(JSON.stringify(charge, null, 2)),
-        branch:  c.branche,
-        sha:     existant ? existant.sha : undefined
-      })
-    });
-    if (!r.ok) { messageGit(await ghErreur(r), 'alerte'); return; }
-    messageGit('Texte enregistré dans ' + c.repo + '/' + c.chemin + '.', 'ok');
+    await ghEcrire(c, depot,
+                   'texte « ' + nom + ' » — ' + new Date().toLocaleString('fr-FR'),
+                   fichier ? fichier.sha : undefined);
+    const d = docCourant();
+    d.sync = editeur.innerHTML;
+    docsEnregistrer();
+    majEtatTexte();
+    messageGit('Texte « ' + nom + ' » enregistré dans ' + c.repo + '/' + c.chemin + '.', 'ok');
   } catch (e) {
     messageGit('Envoi impossible : ' + e.message, 'alerte');
   }
@@ -1394,25 +1713,29 @@ document.getElementById('btnGhRecuperer').addEventListener('click', async () => 
   const c = ghLire();
   if (!ghValider(c)) return;
   ghEnregistrer();
-  messageGit('Récupération en cours…');
+  const nom = docs.courant;
+  messageGit('Récupération de « ' + nom + ' » en cours…');
   try {
-    const f = await ghLireFichier(c);
-    if (!f){ messageGit('Aucun fichier « ' + c.chemin + ' » sur cette branche pour le moment.', 'alerte'); return; }
-    const contenu = f.content ? deBase64(f.content) : await (await fetch(f.download_url, {cache:'no-store'})).text();
-    let charge;
-    try { charge = JSON.parse(contenu); }
-    catch (e) { charge = { texte: contenu, brut: contenu, envoye: '' }; }
-
+    const { fichier, depot } = await lireDepot(c);
+    if (!fichier){ messageGit('Aucun fichier « ' + c.chemin + ' » sur cette branche pour le moment.', 'alerte'); return; }
+    const charge = depot.textes[nom];
+    if (!charge){
+      const dispo = Object.keys(depot.textes).sort(parNom);
+      messageGit('Aucun texte nommé « ' + nom + ' » dans le fichier.' +
+                 (dispo.length ? ' Textes présents : ' + dispo.join(', ') + '.' : ''), 'alerte');
+      return;
+    }
     htmlAvantCorrection = editeur.innerHTML;
     editeur.innerHTML = charge.texte || echapper(charge.brut || '');
     texteEnvoye = charge.envoye || '';
-    localStorage.setItem(CLE_ENVOYE, texteEnvoye);
     resume.style.display = 'none';
     majCompteur();
+    const d = docCourant();
+    d.sync = editeur.innerHTML;
     sauver();
     if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
     const quand = charge.maj ? new Date(charge.maj).toLocaleString('fr-FR') : 'date inconnue';
-    messageGit('Texte récupéré (enregistré le ' + quand + ').', 'ok');
+    messageGit('Texte « ' + nom + ' » récupéré (enregistré le ' + quand + ').', 'ok');
     message('Texte chargé depuis GitHub.');
   } catch (e) {
     messageGit('Récupération impossible : ' + e.message, 'alerte');
@@ -1434,13 +1757,16 @@ document.getElementById('badgeVersion').addEventListener('click', () => {
 /* ---------- démarrage ---------- */
 
 document.getElementById('badgeVersion').textContent = VERSION;
-const sauvegarde = localStorage.getItem(CLE_TEXTE);
-if (sauvegarde) editeur.innerHTML = sauvegarde;
+docsCharger();
+const docInitial = docCourant();
+editeur.innerHTML = docInitial.texte || '';
+texteEnvoye = docInitial.envoye || '';
 if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
 majFormulaireParams();
 majTextesIA();
 ghCharger();
 majCompteur();
+majEtatTexte();
 </script>
 </body>
 </html>
