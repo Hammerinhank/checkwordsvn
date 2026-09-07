@@ -1,7 +1,7 @@
 {
   "application": "correcteur-vietnamien",
-  "version": "V9",
-  "maj": "2026-09-07T13:49:17.959Z",
+  "version": "V15",
+  "maj": "2026-09-07T17:52:48.351Z",
   "textes": {
     "Tableau de Vermeer": {
       "texte": "Bác phải chọn một bức tranh trong khoảng ba mươi bức tranh vì họa sĩ này không đã vẽ nhiều bức tranh. Bác chọn bức tranh tên là “Cô gái đeo hoa tai ngọc trai. Bác muốn cháu biết Vermeer đã cần nhiều năm để vẽ một bức tranh duy nhất. Hơn nữa Vermeer vẽ với một cách rất của mình: Không có một họa sĩ khác vẽ giống Vermeer. Ngọc trai là rất quan trọng cho Vermeer vì anh ấy vẽ mỗi điều giống như điều đó là một ngọc trai. Nếu cháu Chi có thời gian thì có thể xem làm thế nào Vermeer đã vẽ miệng của cô gái trên bức tranh. Nhiều năm trước, bác đã vẽ một bức tranh giống một bức tranh của Vermeer. Bác gửi cho cháu mấy ảnh nên cháu có thể xem họ. Bức tranh này là bức tranh duy nhất Vermeer vẽ về một thành phố. Bác hy vọng cháu đi trên mạng internet để xem mọi bức tranh của một họa sĩ bác mà quá thích. ",
@@ -12,6 +12,16 @@
       "modele": "claude-haiku-4-5-20251001",
       "version": "V9",
       "maj": "2026-09-07T13:49:17.959Z"
+    },
+    "Thị Dự V.": {
+      "texte": "<span class=\"corr\" title=\"avant : mình\">Mình</span> tốt nghiệp chuyên ngành kỹ thuật và từng làm việc trong một trung tâm tiếng Anh dành cho trẻ em. <span class=\"corr\" title=\"avant : cháu\">Cháu</span> học của mình, các bài học sẽ sử dụng hình ảnh trực quan, những câu chuyện, các hoạt động đóng vai và các trò chơi tương tác đầy thú vị đối với các bạn nhỏ. <span class=\"corr\" title=\"avant : mình\">Mình</span> sẽ tập trung vào kỹ năng nghe, phát âm chuẩn và những câu giao tiếp hàng ngày. <span class=\"corr\" title=\"avant : còn\">Còn</span> đối với các bạn lớn hơn, bài học sẽ phát triển thêm kỹ năng đọc hiểu, kỹ năng viết, kỹ năng thuyết trình, phản biện, tùy thuộc vào trình độ cũng như nhu cầu và mục tiêu của từng bạn. <span class=\"corr\" title=\"avant : hãy\">Hãy</span> cùng mình biến thư viện trở nên gần gũi hơn và ý nghĩa hơn với cuộc sống của bạn nhé!",
+      "brut": "Mình tốt nghiệp chuyên ngành kỹ thuật và từng làm việc trong một trung tâm tiếng Anh dành cho trẻ em. Cháu học của mình, các bài học sẽ sử dụng hình ảnh trực quan, những câu chuyện, các hoạt động đóng vai và các trò chơi tương tác đầy thú vị đối với các bạn nhỏ. Mình sẽ tập trung vào kỹ năng nghe, phát âm chuẩn và những câu giao tiếp hàng ngày. Còn đối với các bạn lớn hơn, bài học sẽ phát triển thêm kỹ năng đọc hiểu, kỹ năng viết, kỹ năng thuyết trình, phản biện, tùy thuộc vào trình độ cũng như nhu cầu và mục tiêu của từng bạn. Hãy cùng mình biến thư viện trở nên gần gũi hơn và ý nghĩa hơn với cuộc sống của bạn nhé!",
+      "envoye": "mình tốt nghiệp chuyên ngành kỹ thuật và từng làm việc trong một trung tâm tiếng Anh dành cho trẻ em cháu học của mình các bài học sẽ sử dụng hình ảnh trực quan những câu chuyện các hoạt động đóng vai và các trò chơi tương tác đầy thú vị đối với các bạn nhỏ mình sẽ tập trung vào kỹ năng nghe phát âm chuẩn và những câu giao tiếp hàng ngày còn đối với các bạn lớn hơn bài học sẽ phát triển thêm kỹ năng đọc hiểu kỹ năng viết kỹ năng thuyết trình phản biện tùy thuộc vào trình độ cũng như nhu cầu và mục tiêu của từng bạn hãy cùng mình biến thư viện trở nên gần gũi hơn và ý nghĩa hơn với cuộc sống của bạn nhé",
+      "ia": "chatgpt",
+      "mode": "onglet",
+      "modele": "gpt-4o-mini",
+      "version": "V15",
+      "maj": "2026-09-07T17:52:48.346Z"
     }
   }
 }
