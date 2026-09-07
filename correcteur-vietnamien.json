@@ -1,7 +1,7 @@
 {
   "application": "correcteur-vietnamien",
   "version": "V9",
-  "maj": "2026-09-07T13:49:11.729Z",
+  "maj": "2026-09-07T13:49:17.959Z",
   "textes": {
     "Tableau de Vermeer": {
       "texte": "Bác phải chọn một bức tranh trong khoảng ba mươi bức tranh vì họa sĩ này không đã vẽ nhiều bức tranh. Bác chọn bức tranh tên là “Cô gái đeo hoa tai ngọc trai. Bác muốn cháu biết Vermeer đã cần nhiều năm để vẽ một bức tranh duy nhất. Hơn nữa Vermeer vẽ với một cách rất của mình: Không có một họa sĩ khác vẽ giống Vermeer. Ngọc trai là rất quan trọng cho Vermeer vì anh ấy vẽ mỗi điều giống như điều đó là một ngọc trai. Nếu cháu Chi có thời gian thì có thể xem làm thế nào Vermeer đã vẽ miệng của cô gái trên bức tranh. Nhiều năm trước, bác đã vẽ một bức tranh giống một bức tranh của Vermeer. Bác gửi cho cháu mấy ảnh nên cháu có thể xem họ. Bức tranh này là bức tranh duy nhất Vermeer vẽ về một thành phố. Bác hy vọng cháu đi trên mạng internet để xem mọi bức tranh của một họa sĩ bác mà quá thích. ",
@@ -11,7 +11,7 @@
       "mode": "onglet",
       "modele": "claude-haiku-4-5-20251001",
       "version": "V9",
-      "maj": "2026-09-07T13:49:11.726Z"
+      "maj": "2026-09-07T13:49:17.959Z"
     }
   }
 }
