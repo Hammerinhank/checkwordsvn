@@ -260,7 +260,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V15</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V16</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -343,6 +343,20 @@
         <button class="petit" id="btnTexteNouveau">Nouveau texte</button>
         <button class="petit" id="btnTexteRenommer">Renommer</button>
         <button class="petit" id="btnTexteSupprimer">Supprimer</button>
+      </div>
+
+      <p class="expl" style="margin-top:18px">Pour retrouver un texte enregistré depuis un autre appareil : la recherche lit le fichier du dépôt et liste les noms qu'il contient. Si le nom choisi existe déjà ici, son contenu est remplacé par celui du dépôt ; sinon un texte est créé sous ce nom.</p>
+
+      <div class="champs">
+        <div class="champ large">
+          <label for="listeGhTextes">Textes présents dans le dépôt GitHub</label>
+          <select id="listeGhTextes" disabled></select>
+        </div>
+      </div>
+
+      <div class="boutons" style="margin-top:0">
+        <button class="petit" id="btnGhLister">Rechercher les textes dans GitHub</button>
+        <button class="petit" id="btnGhCharger" disabled>Charger ce texte</button>
       </div>
 
       <div id="etatTextes"></div>
@@ -593,8 +607,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V15';
+const VERSION = 'V16';
 const HISTORIQUE = [
+  { v:'V16', d:'sept. 2026', t:"La section « Changer de texte » sait interroger le dépôt : « Rechercher les textes dans GitHub » liste les noms contenus dans le fichier, et « Charger ce texte » installe celui qui est choisi — le contenu remplace le texte local de même nom, avec confirmation s'il avait été modifié, ou crée un texte sous ce nom s'il n'existait pas encore." },
   { v:'V15', d:'sept. 2026', t:"La requête de ponctuation impose maintenant le français pour les commentaires sur les tournures à revoir : seule la phrase citée reste en vietnamien, et les mots vietnamiens cités sont traduits. Le bouton « Envoi à … » est cadré sur le bord droit de sa section." },
   { v:'V14', d:'sept. 2026', t:"Un bouton « Envoi à … » à droite des deux boutons de copie transmet la requête qui vient d'être copiée, celle de correction comme celle de ponctuation : ouverture de l'IA avec la requête pré-remplie, ou appel direct en mode API. Il passe au vert vif dès qu'une requête est copiée et retrouve sa couleur normale au premier clic, où qu'il soit fait." },
   { v:'V13', d:'sept. 2026', t:"Un second bouton « Copier la requête de ponctuation » dans « Envoyer la requête à la main ». Il demande à l'IA de découper un texte non ponctué en phrases, d'y placer la ponctuation et les majuscules et d'en corriger les défauts de casse, sans ajouter ni retirer de mot — puis, dans la seconde partie de la réponse, de commenter les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct." },
@@ -1236,6 +1251,85 @@ function nomLibre(base){
   while (docs.docs[base + ' ' + i]) i++;
   return base + ' ' + i;
 }
+
+/* ---------- textes présents dans le dépôt ---------- */
+
+const listeGh    = document.getElementById('listeGhTextes');
+const btnGhCharger = document.getElementById('btnGhCharger');
+let depotLu = null;          /* dernier contenu du dépôt lu par la recherche */
+
+function majListeGh(noms, vide){
+  listeGh.innerHTML = noms.length
+    ? noms.map(n => '<option value="' + echapper(n) + '">' + echapper(n) + '</option>').join('')
+    : '<option value="">' + vide + '</option>';
+  listeGh.disabled = !noms.length;
+  btnGhCharger.disabled = !noms.length;
+}
+
+majListeGh([], '— lance la recherche —');
+
+document.getElementById('btnGhLister').addEventListener('click', async (e) => {
+  const c = ghLire();
+  if (!c.user || !c.repo || !c.token){
+    messageTextes("Renseigne d'abord les identifiants dans « Stocker le texte sur GitHub ».", 'alerte');
+    document.getElementById('secGit').open = true;
+    return;
+  }
+  ghEnregistrer();
+  const bouton = e.currentTarget;
+  bouton.disabled = true;
+  messageTextes('Lecture du dépôt…');
+  try {
+    const { fichier, depot } = await lireDepot(c);
+    if (!fichier){
+      depotLu = null;
+      majListeGh([], '— aucun fichier dans le dépôt —');
+      messageTextes('Aucun fichier « ' + c.chemin + ' » sur cette branche.', 'alerte');
+      return;
+    }
+    depotLu = depot;
+    const noms = Object.keys(depot.textes).sort(parNom);
+    majListeGh(noms, '— aucun texte dans ce fichier —');
+    if (noms.length && docs.docs[docs.courant] && noms.includes(docs.courant)) listeGh.value = docs.courant;
+    messageTextes(noms.length
+      ? noms.length + (noms.length > 1 ? ' textes trouvés dans ' : ' texte trouvé dans ') + c.repo + '/' + c.chemin + '.'
+      : 'Le fichier ne contient aucun texte.', noms.length ? 'ok' : 'alerte');
+  } catch (err) {
+    depotLu = null;
+    majListeGh([], '— lecture impossible —');
+    messageTextes('Lecture impossible : ' + err.message, 'alerte');
+  } finally {
+    bouton.disabled = false;
+  }
+});
+
+btnGhCharger.addEventListener('click', () => {
+  const nom = listeGh.value;
+  if (!nom || !depotLu || !depotLu.textes[nom]){
+    messageTextes('Relance la recherche : la liste n\'est plus à jour.', 'alerte');
+    return;
+  }
+  const existait = !!docs.docs[nom];
+  if (existait && estModifie(docs.docs[nom]) &&
+      !confirm('Le texte « ' + nom + ' » existe ici et diffère de la version du dépôt.\nRemplacer son contenu par celui du dépôt ?')) return;
+
+  const charge = depotLu.textes[nom];
+  sauver();                                   /* le texte en cours est conservé */
+  if (!existait) docs.docs[nom] = docNeuf();
+  const d = docs.docs[nom];
+  d.texte  = charge.texte || echapper(charge.brut || '');
+  d.envoye = charge.envoye || '';
+  d.maj    = new Date().toISOString();
+  afficherDoc(nom);
+  docCourant().sync = editeur.innerHTML;      /* barre verte : identique au dépôt */
+  docsEnregistrer();
+  majEtatTexte();
+  const quand = charge.maj ? new Date(charge.maj).toLocaleString('fr-FR') : 'date inconnue';
+  messageTextes((existait
+    ? 'Texte « ' + nom + ' » remplacé par la version du dépôt'
+    : 'Nouveau texte « ' + nom + ' » créé à partir du dépôt') + ' (enregistrée le ' + quand + ').', 'ok');
+  message('Texte « ' + nom + ' » chargé depuis GitHub.');
+});
 
 document.getElementById('btnTexteNouveau').addEventListener('click', () => {
   demanderNom('Nouveau texte', nomLibre('Nouveau texte'), (nom) => {
