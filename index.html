@@ -230,7 +230,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V7</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V8</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -291,6 +291,10 @@
   <details class="section" id="secGit">
     <summary>Stocker le texte sur GitHub <span class="note">identifiants, envoi, récupération</span></summary>
     <div class="section-corps">
+      <div class="boutons" style="margin-top:0;margin-bottom:14px">
+        <button class="principal petit" id="btnGhEnvoyer">Envoyer vers GitHub</button>
+      </div>
+
       <p class="expl">Le texte (avec ses mots en rouge), le texte envoyé à l'IA et la date sont enregistrés dans un fichier JSON du dépôt. Ni le jeton GitHub ni les clés API ne sont écrits dans le dépôt : ils restent dans ce navigateur. Utilise un dépôt privé et un jeton limité à ce dépôt.</p>
 
       <div class="champs">
@@ -322,7 +326,6 @@
         <button class="petit" id="btnGhOublier">Oublier le jeton</button>
       </div>
       <div class="boutons" style="margin-top:4px">
-        <button class="principal petit" id="btnGhEnvoyer">Envoyer vers GitHub</button>
         <button class="petit" id="btnGhRecuperer">Récupérer depuis GitHub</button>
       </div>
 
@@ -330,18 +333,23 @@
     </div>
   </details>
 
-  <p class="aide">
-    L'icône ⚙️ en haut de la page règle l'IA de vérification (<span class="nom-ia">ChatGPT</span> en ce moment) et la façon
-    de l'atteindre : par un onglet web, ou par un appel direct à son API, qui écrit la correction dans l'éditeur
-    en une ou deux secondes sans copier-coller. En mode onglet, le bouton d'envoi ouvre l'IA avec la requête
-    pré-remplie et allume en vert « Appliquer la correction » : c'est le rappel qu'une réponse est attendue.
-    Ce bouton suit ensuite le cycle du travail : il devient « Accepter les corrections » une fois le texte
-    corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Dans le texte, un mot en rouge
-    a été corrigé, un mot en rouge gras est un ajout proposé, un mot en rouge barré est une suppression
-    proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés
-    toi-même. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part
-    vers l'IA — le rouge n'est jamais envoyé.
-  </p>
+  <details class="section" id="secAide">
+    <summary>Comment fonctionne cette page <span class="note">réglages, cycle du bouton, code des couleurs</span></summary>
+    <div class="section-corps">
+      <p class="expl">
+        L'icône ⚙️ en haut de la page règle l'IA de vérification (<span class="nom-ia">ChatGPT</span> en ce moment) et la façon
+        de l'atteindre : par un onglet web, ou par un appel direct à son API, qui écrit la correction dans l'éditeur
+        en une ou deux secondes sans copier-coller. En mode onglet, le bouton d'envoi ouvre l'IA avec la requête
+        pré-remplie et allume en vert « Appliquer la correction » : c'est le rappel qu'une réponse est attendue.
+        Ce bouton suit ensuite le cycle du travail : il devient « Accepter les corrections » une fois le texte
+        corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Dans le texte, un mot en rouge
+        a été corrigé, un mot en rouge gras est un ajout proposé, un mot en rouge barré est une suppression
+        proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés
+        toi-même. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part
+        vers l'IA — le rouge n'est jamais envoyé.
+      </p>
+    </div>
+  </details>
 
 </div>
 
@@ -491,8 +499,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V7';
+const VERSION = 'V8';
 const HISTORIQUE = [
+  { v:'V8', d:'sept. 2026', t:"Le bouton « Envoyer vers GitHub » passe en tête de la section GitHub, avant les explications et les identifiants. Le mode d'emploi qui fermait la page devient une section repliable « Comment fonctionne cette page », toujours en dernière position." },
   { v:'V7', d:'sept. 2026', t:"Nouveau mode « appel direct par API » pour les deux IA : la correction revient en une à deux secondes et s'écrit seule dans l'éditeur, sans onglet ni copier-coller. La fenêtre de paramétrage accueille la clé API, le choix du modèle, un test de clé, et trois explications repliables : la lenteur de Claude en mode onglet, le fonctionnement et le coût des API, le choix du modèle." },
   { v:'V6', d:'sept. 2026', t:"Une icône de paramétrage ⚙️ ouvre une fenêtre de réglages où l'on choisit l'IA de vérification : ChatGPT ou Claude. L'envoi ouvre le site choisi et tous les libellés de la page prennent son nom ; le choix est mémorisé dans ce navigateur." },
   { v:'V5', d:'sept. 2026', t:"L'acceptation conserve désormais par défaut les mots rouges barrés qui n'ont pas été effacés à la main. La section « Mettre le texte au propre » offre les deux choix : garder les mots barrés ou les supprimer tous." },
