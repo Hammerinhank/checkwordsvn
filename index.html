@@ -85,6 +85,8 @@
   .suppr{color:var(--laque);text-decoration:line-through;text-decoration-thickness:2px;opacity:.8}
 
   .boutons{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+  /* Le bouton OK est repoussé contre le bord droit de la page. */
+  #btnOk{margin-left:auto;min-width:76px}
   button{
     font-family:inherit;font-size:.95rem;
     border-radius:8px;border:1px solid var(--trait);
@@ -246,6 +248,7 @@
   @media (max-width:520px){
     #editeur{font-size:1.1rem}
     .boutons button{flex:1 1 auto}
+    #btnOk{flex:0 0 auto;margin-left:auto}
   }
 </style>
 </head>
@@ -255,7 +258,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V11</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V12</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -272,6 +275,7 @@
   <div class="boutons">
     <button class="principal" id="btnEnvoyer">Envoyer à ChatGPT</button>
     <button class="principal" id="btnAppliquer">Appliquer la correction</button>
+    <button class="principal" id="btnOk" title="Accepter la correction et supprimer les mots barrés">OK</button>
   </div>
 
   <div id="etat"></div>
@@ -394,7 +398,10 @@
         de l'atteindre : par un onglet web, ou par un appel direct à son API, qui écrit la correction dans l'éditeur
         en une ou deux secondes sans copier-coller. En mode onglet, le bouton d'envoi ouvre l'IA avec la requête
         pré-remplie et allume en vert « Appliquer la correction » : c'est le rappel qu'une réponse est attendue.
-        Ce bouton suit ensuite le cycle du travail : il devient « Accepter les corrections » une fois le texte
+        Juste après l'application d'une correction, le bouton « OK », à droite de la ligne, s'allume en vert
+        vif : un clic dessus accepte tout et retire les mots barrés d'un seul geste ; il s'éteint dès qu'on
+        clique n'importe où ailleurs.
+        Ce bouton d'envoi suit ensuite le cycle du travail : il devient « Accepter les corrections » une fois le texte
         corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Dans le texte, un mot en rouge
         a été corrigé, un mot en rouge gras est un ajout proposé, un mot en rouge barré est une suppression
         proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés
@@ -576,8 +583,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V11';
+const VERSION = 'V12';
 const HISTORIQUE = [
+  { v:'V12', d:'sept. 2026', t:"Un bouton « OK », cadré à droite sur la ligne des boutons principaux, s'allume en vert vif juste après l'application d'une correction. Un clic dessus fait la même chose que « Supprimer les mots barrés » ; il retrouve sa couleur normale au clic, ou dès qu'on clique ailleurs dans la page." },
   { v:'V11', d:'sept. 2026', t:"La requête demande à l'IA une réponse en deux parties séparées par une ligne repère : le texte corrigé, puis les phrases qui restent bancales ou sonneraient étrangement à un locuteur natif, chacune avec ce qui cloche et la formulation attendue. Cette seconde partie s'affiche dans une nouvelle section « Tournures à revoir », sous la liste des modifications, sans jamais modifier le texte de l'éditeur." },
   { v:'V10', d:'sept. 2026', t:"Le bouton d'envoi nomme désormais le texte concerné (« Envoyer « … » vers GitHub »), annonce « Envoi en cours… » pendant l'opération, puis affiche son verdict pendant trois secondes : vert vif en cas de réussite, rouge vif en cas d'échec, avant de reprendre son libellé." },
   { v:'V9', d:'sept. 2026', t:"L'application gère plusieurs textes. La section « Changer de texte » offre une liste déroulante classée par ordre alphabétique, et permet de créer, renommer ou supprimer un texte — renommage et suppression étant répercutés dans le dépôt. Tous les textes tiennent dans un seul fichier JSON, mais l'envoi et la récupération ne portent que sur le texte affiché. La barre verticale à gauche de l'éditeur passe à l'orange tant que le texte affiché diffère de sa dernière version échangée avec GitHub, et redevient verte dès sa sauvegarde." },
@@ -608,6 +616,7 @@ const resumeListe = document.getElementById('resumeListe');
 const resumeTitre = document.getElementById('resumeTitre');
 const btnAppliquer= document.getElementById('btnAppliquer');
 const btnEnvoyer  = document.getElementById('btnEnvoyer');
+const btnOk       = document.getElementById('btnOk');
 const btnGhEnvoyer= document.getElementById('btnGhEnvoyer');
 const sousTitre   = document.getElementById('sousTitre');
 const champCle    = document.getElementById('cleApi');
@@ -800,6 +809,23 @@ function echapper(s){
 /* Attente d'une réponse de l'IA : le bouton d'application passe au vert vif. */
 function armerAttente(){ btnAppliquer.classList.add('attente'); }
 function eteindreAttente(){ btnAppliquer.classList.remove('attente'); }
+
+/* Le bouton OK s'allume en vert vif dès qu'une correction vient d'être
+   appliquée : un clic dessus accepte tout et retire les mots barrés.
+   Il s'éteint au premier clic, où qu'il soit fait dans la page. */
+function allumerOk(){
+  setTimeout(() => btnOk.classList.add('attente'), 0);   // après le clic en cours
+}
+function eteindreOk(){ btnOk.classList.remove('attente'); }
+
+document.addEventListener('click', (e) => {
+  if (e.target !== btnOk && !btnOk.contains(e.target)) eteindreOk();
+});
+
+btnOk.addEventListener('click', () => {
+  eteindreOk();
+  accepterCorrections(true);
+});
 
 /* Le bouton principal a deux états : il applique la réponse de l'IA,
    puis propose d'accepter les corrections, puis retrouve son rôle initial. */
@@ -1135,6 +1161,7 @@ function afficherDoc(nom, msg){
   editeur.innerHTML = d.texte || '';
   resume.style.display = 'none';
   eteindreAttente();
+  eteindreOk();
   if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
   majCompteur();
   docsEnregistrer();
@@ -1530,6 +1557,7 @@ function appliquer(brut){
 
   afficherResultat(items, marques);
   afficherResume(changements, parties.remarques, parties.presente);
+  if (changements.length) allumerOk();
   majCompteur();
   sauver();
 
