@@ -158,7 +158,12 @@
     background:#E4EFF9;color:var(--bleu);border-bottom:1px dotted var(--bleu);
     border-radius:3px;padding:0 2px;cursor:pointer;
   }
-  #editeur .dur.vise{background:#BFDCF3}
+  #editeur .dur.vise{background:#BFDCF3;font-weight:700}
+  /* Lecture du vocabulaire : le texte devient une fenêtre qui défile toute seule,
+     l'explication choisie occupe juste la hauteur qu'il lui faut. */
+  #editeur.lecture{position:relative;max-height:52vh;overflow-y:auto;scroll-behavior:smooth}
+  #motsListe.compact{position:relative;overflow-y:auto;scroll-behavior:smooth}
+  #motsListe.compact li{cursor:pointer}
 
   /* Sections repliables */
   details.section{
@@ -277,7 +282,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V19</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V20</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -460,8 +465,10 @@
         avec sa requête. La requête de ponctuation demande en outre la traduction française du texte, qui
         s'affiche sous les tournures à revoir. La requête de vocabulaire, elle, ne corrige rien : elle
         colore en bleu les mots qu'un niveau A2 ne connaît probablement pas, et chaque clic sur un mot
-        coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras. La couleur s'efface
-        avec « OK » ou « Accepter les corrections ». La section « Changer de texte » permet de tenir plusieurs
+        coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras — et inversement, cliquer
+        une explication centre le mot dans le texte, un nouveau clic allant à son occurrence suivante.
+        Pendant cette lecture, le texte et les explications forment deux fenêtres qui défilent chacune de
+        leur côté. La couleur s'efface avec « OK » ou « Accepter les corrections ». La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -635,8 +642,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V19';
+const VERSION = 'V20';
 const HISTORIQUE = [
+  { v:'V20', d:'sept. 2026', t:"Lecture du vocabulaire repensée pour les petits écrans : le texte devient une fenêtre qui défile seule et garde l'essentiel de la hauteur, tandis que la fenêtre du bas se réduit à la hauteur de l'explication choisie. Un clic sur un mot coloré affiche son explication et met le mot en gras ; un clic sur une explication centre le mot verticalement dans le texte, les clics suivants passant aux occurrences suivantes. Toutes les occurrences d'un mot sont désormais colorées, et le gras tombe au premier clic ailleurs." },
   { v:'V19', d:'sept. 2026', t:"Troisième requête dans « Envoyer la requête à la main » : le vocabulaire. L'IA renvoie le texte inchangé, les mots difficiles pour un niveau A2 entourés d'accolades, et leur explication en français. La page colore ces mots en bleu dans l'éditeur ; un clic sur l'un d'eux fait défiler la fenêtre du bas jusqu'à son explication et la met en gras. Si le texte renvoyé s'écarte de l'original, le texte d'origine est conservé et les mots y sont retrouvés par recherche." },
   { v:'V18', d:'sept. 2026', t:"La requête de ponctuation demande une troisième partie : la traduction française du texte ponctué, introduite par sa propre ligne repère. Elle s'affiche dans une nouvelle section « Traduction en français », sous les tournures à revoir, dans la même fenêtre que les modifications." },
   { v:'V17', d:'sept. 2026', t:"Simplification de « Envoyer la requête à la main » : le bouton « Envoi à … » disparaît, et les deux boutons restants se comportent exactement comme le bouton d'envoi principal — ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API — l'un avec la requête de correction, l'autre avec celle de ponctuation." },
@@ -879,6 +887,9 @@ function eteindreOk(){ btnOk.classList.remove('attente'); }
 
 document.addEventListener('click', (e) => {
   if (e.target !== btnOk && !btnOk.contains(e.target)) eteindreOk();
+  const dedans = e.target && e.target.closest &&
+                 (e.target.closest('#editeur .dur') || e.target.closest('#motsListe li'));
+  if (!dedans) effacerVise();
 });
 
 btnOk.addEventListener('click', () => {
@@ -1080,6 +1091,7 @@ function afficherTraduction(traduction){
 
 function afficherResume(changements, remarques, presente, traduction){
   document.getElementById('blocMots').hidden = true;
+  quitterModeMots();
   const avecRemarques   = afficherRemarques(remarques || [], !!presente);
   const avecTraduction  = afficherTraduction(traduction || '');
   const blocCorr = document.getElementById('blocCorrections');
@@ -1770,29 +1782,26 @@ function aplatir(t){ return (t || '').normalize('NFC').replace(/\s+/g, ' ').trim
 function cleMot(m){ return (m || '').normalize('NFC').toLowerCase().replace(/[.,;:!?…«»"'()\[\]]/g, '').trim(); }
 function texteEnHtml(t){ return echapper(t).replace(/\n/g, '<br>'); }
 
-/* Cas normal : l'IA a rendu le texte tel quel, accolades en plus. */
-function surlignerDepuisMarques(marque, mots){
-  return marque.split(/\{\{([\s\S]*?)\}\}/).map((bout, k) => {
-    if (k % 2 === 0) return texteEnHtml(bout);
-    const i = mots.findIndex(m => cleMot(m.mot) === cleMot(bout));
-    return '<span class="dur" data-i="' + i + '" title="Voir l\'explication">' + texteEnHtml(bout) + '</span>';
-  }).join('');
-}
-
-/* Repli : le texte renvoyé s'écarte de l'original, on surligne l'original. */
-function surlignerParRecherche(reference, mots){
+/* Le texte affiché reste rigoureusement celui de l'éditeur : les mots de la
+   liste y sont retrouvés par recherche, toutes leurs occurrences colorées. */
+function surlignerMots(reference, mots){
   const bas = reference.normalize('NFC').toLowerCase();
+  const lettre = (c) => !!c && /[\p{L}\p{M}\p{N}]/u.test(c);
   const zones = [];
-  mots.forEach((m, i) => {
-    const cible = (m.mot || '').normalize('NFC').toLowerCase().trim();
-    if (!cible) return;
-    let depart = 0, pos;
-    while ((pos = bas.indexOf(cible, depart)) !== -1){
-      const fin = pos + cible.length;
-      if (!zones.some(z => pos < z.fin && fin > z.debut)){ zones.push({ debut:pos, fin, i }); break; }
-      depart = pos + 1;
-    }
-  });
+
+  mots.map((m, i) => ({ i, cible: (m.mot || '').normalize('NFC').toLowerCase().trim() }))
+      .filter(o => o.cible)
+      .sort((a, b) => b.cible.length - a.cible.length)   /* les expressions avant les mots seuls */
+      .forEach(o => {
+        let depart = 0, pos;
+        while ((pos = bas.indexOf(o.cible, depart)) !== -1){
+          const fin = pos + o.cible.length;
+          const entier = !lettre(bas[pos - 1]) && !lettre(bas[fin]);
+          if (entier && !zones.some(z => pos < z.fin && fin > z.debut)) zones.push({ debut: pos, fin, i: o.i });
+          depart = pos + 1;
+        }
+      });
+
   zones.sort((a, b) => a.debut - b.debut);
   let html = '', curseur = 0;
   zones.forEach(z => {
@@ -1801,7 +1810,17 @@ function surlignerParRecherche(reference, mots){
             texteEnHtml(reference.slice(z.debut, z.fin)) + '</span>';
     curseur = z.fin;
   });
-  return html + texteEnHtml(reference.slice(curseur));
+  return { html: html + texteEnHtml(reference.slice(curseur)), zones: zones.length };
+}
+
+/* Sortie du mode lecture : le texte et la liste retrouvent leur taille libre. */
+function quitterModeMots(){
+  const liste = document.getElementById('motsListe');
+  editeur.classList.remove('lecture');
+  liste.classList.remove('compact');
+  liste.style.maxHeight = '';
+  editeur.style.removeProperty('min-height');
+  occurrences = {};
 }
 
 function afficherMots(mots){
@@ -1810,8 +1829,16 @@ function afficherMots(mots){
   afficherTraduction('');
   const bloc = document.getElementById('blocMots');
   const liste = document.getElementById('motsListe');
-  if (!mots.length){ bloc.hidden = true; liste.innerHTML = ''; resume.style.display = 'none'; return; }
+  if (!mots.length){
+    bloc.hidden = true; liste.innerHTML = ''; resume.style.display = 'none';
+    quitterModeMots();
+    return;
+  }
   bloc.hidden = false;
+  editeur.classList.add('lecture');
+  liste.classList.add('compact');
+  liste.style.maxHeight = Math.round(window.innerHeight * 0.30) + 'px';
+  occurrences = {};
   document.getElementById('motsTitre').textContent = mots.length === 1
     ? '1 mot à connaître' : mots.length + ' mots à connaître';
   liste.innerHTML = mots.map((m, i) =>
@@ -1836,33 +1863,77 @@ function appliquerVocabulaire(brut){
     return;
   }
 
-  const sansMarques = marque.replace(/\{\{|\}\}/g, '');
-  const conforme = aplatir(sansMarques) === aplatir(reference);
+  const conforme = aplatir(marque.replace(/\{\{|\}\}/g, '')) === aplatir(reference);
+  const surligne = surlignerMots(reference, mots);
 
   htmlAvantCorrection = editeur.innerHTML;
-  editeur.innerHTML = conforme
-    ? surlignerDepuisMarques(marque, mots)
-    : surlignerParRecherche(reference, mots);
+  editeur.innerHTML = surligne.html;
   sauver();
   majCompteur();
   eteindreAttente();
   passerEnModeAppliquer();
   afficherMots(mots);
-  message(mots.length + (mots.length > 1 ? ' mots colorés' : ' mot coloré') +
-          ' : clique sur un mot pour lire son explication.' +
-          (conforme ? '' : ' Le texte renvoyé différait de l\'original : ton texte a été conservé tel quel.'));
+  const carte = editeur.closest('.carte');
+  if (carte) carte.scrollIntoView({ behavior:'smooth', block:'start' });
+  message(mots.length + (mots.length > 1 ? ' mots signalés' : ' mot signalé') +
+          (surligne.zones > mots.length ? ', ' + surligne.zones + ' occurrences colorées' : '') +
+          ' : clique un mot coloré, ou son explication en dessous.' +
+          (conforme ? '' : " Le texte renvoyé par l'IA différait du tien : ton texte a été conservé tel quel."));
 }
 
-/* Clic sur un mot coloré : son explication est amenée à l'écran, en gras. */
+/* Va-et-vient entre le texte et les explications. */
+let occurrences = {};      /* prochaine occurrence à montrer, par mot */
+
+function effacerVise(){
+  document.querySelectorAll('#motsListe li.vise, #editeur .dur.vise').forEach(n => n.classList.remove('vise'));
+}
+
+/* L'explication choisie remplit la fenêtre du bas, sans plus : sa hauteur est
+   celle de l'explication, avec un minimum pour les toutes petites. */
+function cadrerExplication(li){
+  const liste = document.getElementById('motsListe');
+  const haut = Math.min(Math.max(li.offsetHeight + 14, 84), Math.round(window.innerHeight * 0.30));
+  liste.style.maxHeight = haut + 'px';
+  liste.scrollTop = Math.max(0, li.offsetTop - 6);
+  const carte = resume.getBoundingClientRect();
+  if (carte.top < 0 || carte.bottom > window.innerHeight) resume.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+/* Le mot visé est amené au milieu, verticalement, de la fenêtre de texte. */
+function centrerMot(span){
+  const cible = span.offsetTop + span.offsetHeight / 2 - editeur.clientHeight / 2;
+  editeur.scrollTop = Math.max(0, cible);
+  const boite = editeur.getBoundingClientRect();
+  if (boite.top < 0 || boite.bottom > window.innerHeight) editeur.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+/* Clic sur un mot coloré : il passe en gras, son explication vient sous les yeux. */
 editeur.addEventListener('click', (e) => {
   const cible = e.target && e.target.closest ? e.target.closest('.dur') : null;
   if (!cible) return;
-  document.querySelectorAll('#motsListe li.vise, #editeur .dur.vise').forEach(n => n.classList.remove('vise'));
+  effacerVise();
   cible.classList.add('vise');
   const li = document.getElementById('mot-' + cible.dataset.i);
   if (!li) return;
   li.classList.add('vise');
-  li.scrollIntoView({ behavior:'smooth', block:'center' });
+  cadrerExplication(li);
+});
+
+/* Clic sur une explication : le mot correspondant est centré dans le texte et
+   passe en gras ; un nouveau clic passe à l'occurrence suivante. */
+document.getElementById('motsListe').addEventListener('click', (e) => {
+  const li = e.target && e.target.closest ? e.target.closest('li') : null;
+  if (!li || !/^mot-\d+$/.test(li.id)) return;
+  const i = li.id.slice(4);
+  effacerVise();
+  li.classList.add('vise');
+  cadrerExplication(li);
+  const marques = Array.from(editeur.querySelectorAll('.dur[data-i="' + i + '"]'));
+  if (!marques.length) return;
+  const rang = (occurrences[i] || 0) % marques.length;
+  occurrences[i] = rang + 1;
+  marques[rang].classList.add('vise');
+  centrerMot(marques[rang]);
 });
 
 function appliquer(brut){
@@ -1921,6 +1992,7 @@ function appliquer(brut){
 }
 
 function accepterCorrections(supprimerBarres){
+  if (!document.getElementById('blocMots').hidden) afficherMots([]);
   const copie = editeur.cloneNode(true);
   if (supprimerBarres) copie.querySelectorAll('.suppr').forEach(n => n.remove());
   let t = extraireTexte(copie)
