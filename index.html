@@ -258,7 +258,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V12</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V13</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -294,9 +294,10 @@
   <details class="section" id="secRequete">
     <summary>Envoyer la requête à la main <span class="note">quand <span class="nom-ia">ChatGPT</span> est déjà ouvert</span></summary>
     <div class="section-corps">
-      <p class="expl">Copie la requête complète (texte + consignes de correction + demande de relecture du naturel) sans ouvrir de nouvel onglet. Le texte est mémorisé comme référence de comparaison, exactement comme avec le bouton d'envoi. Utile aussi en mode API, si tu préfères ponctuellement passer par l'interface web.</p>
+      <p class="expl">Deux requêtes à copier, sans ouvrir de nouvel onglet. La première est la requête habituelle : correction des fautes de frappe, plus la relecture du naturel. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct. Dans les deux cas le texte est mémorisé comme référence de comparaison, et la réponse se colle avec « Appliquer la correction ».</p>
       <div class="boutons" style="margin-top:0">
         <button id="btnCopier">Copier la requête</button>
+        <button id="btnCopierPonctuation">Copier la requête de ponctuation</button>
       </div>
     </div>
   </details>
@@ -409,7 +410,10 @@
         vers l'IA — le rouge n'est jamais envoyé. La requête demande en outre à l'IA une seconde partie de
         réponse, séparée par une ligne repère : les phrases qui, même sans faute de frappe, seraient
         bancales ou sonneraient étrangement à l'oreille d'un natif. Elles s'affichent sous la liste des
-        modifications, dans « Tournures à revoir », et ne touchent jamais au texte de l'éditeur. La section « Changer de texte » permet de tenir plusieurs
+        modifications, dans « Tournures à revoir », et ne touchent jamais au texte de l'éditeur. La section
+        « Envoyer la requête à la main » offre en plus une requête de ponctuation, pour un texte saisi d'un
+        seul tenant : l'IA y découpe les phrases, pose la ponctuation et les majuscules sans toucher aux
+        mots, et signale à part celles qui demanderaient davantage pour être du vietnamien correct. La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -583,8 +587,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V12';
+const VERSION = 'V13';
 const HISTORIQUE = [
+  { v:'V13', d:'sept. 2026', t:"Un second bouton « Copier la requête de ponctuation » dans « Envoyer la requête à la main ». Il demande à l'IA de découper un texte non ponctué en phrases, d'y placer la ponctuation et les majuscules et d'en corriger les défauts de casse, sans ajouter ni retirer de mot — puis, dans la seconde partie de la réponse, de commenter les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct." },
   { v:'V12', d:'sept. 2026', t:"Un bouton « OK », cadré à droite sur la ligne des boutons principaux, s'allume en vert vif juste après l'application d'une correction. Un clic dessus fait la même chose que « Supprimer les mots barrés » ; il retrouve sa couleur normale au clic, ou dès qu'on clique ailleurs dans la page." },
   { v:'V11', d:'sept. 2026', t:"La requête demande à l'IA une réponse en deux parties séparées par une ligne repère : le texte corrigé, puis les phrases qui restent bancales ou sonneraient étrangement à un locuteur natif, chacune avec ce qui cloche et la formulation attendue. Cette seconde partie s'affiche dans une nouvelle section « Tournures à revoir », sous la liste des modifications, sans jamais modifier le texte de l'éditeur." },
   { v:'V10', d:'sept. 2026', t:"Le bouton d'envoi nomme désormais le texte concerné (« Envoyer « … » vers GitHub »), annonce « Envoi en cours… » pendant l'opération, puis affiche son verdict pendant trois secondes : vert vif en cas de réussite, rouge vif en cas d'échec, avant de reprendre son libellé." },
@@ -1337,6 +1342,39 @@ function analyserRemarques(bloc){
     });
 }
 
+/* Requête distincte : le texte arrive sans ponctuation, ou presque. */
+function construireRequetePonctuation(texte){
+  return [
+    "Voici un texte en vietnamien dont la ponctuation est absente ou très insuffisante.",
+    "",
+    "Rétablis la ponctuation et la casse :",
+    "- découpe le texte en phrases là où elles commencent et se terminent logiquement, en terminant chacune par le signe qui convient (point, point d'interrogation, point d'exclamation) ;",
+    "- à l'intérieur des phrases, place la ponctuation appropriée selon l'usage vietnamien : virgules, deux-points, guillemets, tirets de dialogue ;",
+    "- mets la majuscule en début de phrase et aux noms propres, et corrige les majuscules ou minuscules mal placées à l'intérieur des mots ;",
+    "- corrige au passage les petits défauts de saisie : espaces manquants ou en trop, signes diacritiques et tons mal saisis, mots visiblement mal orthographiés.",
+    "",
+    "Règles strictes :",
+    "- n'ajoute et ne supprime aucun mot, et ne change pas leur ordre : corriger l'orthographe d'un mot est permis, le remplacer par un autre mot ne l'est pas ;",
+    "- ne reformule pas, ne traduis pas, n'améliore pas le style ;",
+    "- garde les retours à la ligne existants ;",
+    "- si une phrase ne peut pas devenir du vietnamien correct par la seule ponctuation, laisse ses mots tels quels dans la première partie et signale-la dans la seconde.",
+    "",
+    "Ta réponse comporte deux parties, séparées par une ligne contenant exactement " + SEPARATEUR + " :",
+    "",
+    "PREMIÈRE PARTIE, avant cette ligne : le texte ponctué, et rien d'autre — sans guillemets d'encadrement, sans explication, sans commentaire.",
+    "",
+    "SECONDE PARTIE, après cette ligne : uniquement les phrases qui auraient besoin d'un changement allant au-delà de la ponctuation et de la casse pour être du vietnamien correct. Une phrase par ligne, sous la forme : la phrase concernée, puis une flèche →, puis en français ce qui ne va pas et la formulation correcte attendue. Si la ponctuation a suffi partout, écris seulement RAS sur une ligne.",
+    "",
+    "Exemple de réponse complète :",
+    "Tôi đi học rồi. Bạn có khỏe không?",
+    SEPARATEUR,
+    "bạn có khỏe không → il manque le pronom d'adresse ; un natif dirait « anh có khỏe không ».",
+    "",
+    "Texte :",
+    texte
+  ].join('\n');
+}
+
 function nettoyerReponse(brut){
   let t = (brut || '').replace(/\r/g, '').trim();
   t = t.replace(/^```[a-z]*\s*\n?/i, '').replace(/\n?```\s*$/,'').trim();
@@ -1495,15 +1533,21 @@ btnEnvoyer.addEventListener('click', async () => {
     : nomIA() + " est ouvert. La copie automatique a échoué : ouvre « Envoyer la requête à la main ».");
 });
 
-document.getElementById('btnCopier').addEventListener('click', async () => {
+async function copierRequete(construire, quoi){
   const texte = texteEditeur();
   if (!texte){ message("Écris d'abord un texte à corriger.", true); return; }
-  const ok = await copier(construireRequete(texte));
+  const ok = await copier(construire(texte));
   texteEnvoye = texte;
   sauver();
   if (ok){ passerEnModeAppliquer(); armerAttente(); }
-  message(ok ? "Requête copiée. Colle-la dans " + nomIA() + "." : "La copie a échoué.", !ok);
-});
+  message(ok ? "Requête " + quoi + " copiée. Colle-la dans " + nomIA() + "." : "La copie a échoué.", !ok);
+}
+
+document.getElementById('btnCopier').addEventListener('click',
+  () => copierRequete(construireRequete, 'de correction'));
+
+document.getElementById('btnCopierPonctuation').addEventListener('click',
+  () => copierRequete(construireRequetePonctuation, 'de ponctuation'));
 
 btnAppliquer.addEventListener('click', async () => {
   if (modeBouton === 'accepter'){ accepterCorrections(false); return; }
