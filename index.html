@@ -462,7 +462,7 @@
 <body>
 
 <div class="container" id="page-principale">
-    <h1>🚀 Le Déployeur <span id="version-badge" style="font-size:14px;color:#fff;background:#0071e3;font-weight:700;padding:3px 10px;border-radius:20px;vertical-align:middle;">v1.34</span></h1>
+    <h1>🚀 Le Déployeur <span id="version-badge" style="font-size:14px;color:#fff;background:#0071e3;font-weight:700;padding:3px 10px;border-radius:20px;vertical-align:middle;">v1.35</span></h1>
 
     <!-- 1. CONFIGURATION GITHUB -->
     <div class="card">
@@ -2880,10 +2880,6 @@
     }
 
     async function deployerCode() {
-        // L'historique affiché va devenir périmé dès le commit : on le retire,
-        // exactement comme un second clic sur « Charger l'historique ».
-        if (historiqueEstAffiche()) viderHistorique();
-
         const repo = document.getElementById('select-target').value;
         const code = document.getElementById('html-code').value;
         const commentaire = document.getElementById('commit-comment').value.trim();
@@ -2984,6 +2980,10 @@
                 );
                 return;
             }
+
+            // Le commit existe : l'historique affiché est désormais périmé, on le
+            // retire exactement comme un second clic sur « Charger l'historique ».
+            if (historiqueEstAffiche()) viderHistorique();
 
             afficherMessage(`Commit ${shaCommit} créé. Vérification du contenu réellement en ligne...`, "success");
 
