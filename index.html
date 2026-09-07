@@ -16,6 +16,7 @@
     --laque-fond:#FBE9E7;
     --vif:#00C853;
     --ambre:#C2710C;
+    --bleu:#1B4F82;
     --trait:#D5DAD4;
     --rayon:10px;
     --serif: "Charter","Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
@@ -143,6 +144,21 @@
   #blocTraduction{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
   #blocCorrections[hidden] + #blocRemarques[hidden] + #blocTraduction{border-top:none;margin-top:0;padding-top:0}
   #traductionTexte p{margin:6px 0;font-size:.98rem;line-height:1.55}
+  #blocMots{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
+  #blocCorrections[hidden] + #blocRemarques[hidden] + #blocTraduction[hidden] + #blocMots{
+    border-top:none;margin-top:0;padding-top:0;
+  }
+  #motsListe{margin:0;padding-left:20px}
+  #motsListe li{margin:6px 0;font-size:.95rem}
+  #motsListe li.vise{font-weight:700}
+  #motsListe .mot{font-family:var(--serif);font-size:1.02rem;color:var(--bleu);display:block}
+  #motsListe .quoi{color:var(--encre-douce);display:block;font-weight:inherit}
+  /* Mots difficiles repérés par l'IA : cliquables, effacés par « Accepter ». */
+  #editeur .dur{
+    background:#E4EFF9;color:var(--bleu);border-bottom:1px dotted var(--bleu);
+    border-radius:3px;padding:0 2px;cursor:pointer;
+  }
+  #editeur .dur.vise{background:#BFDCF3}
 
   /* Sections repliables */
   details.section{
@@ -261,7 +277,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V18</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V19</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -296,15 +312,20 @@
       <h2>Traduction en français</h2>
       <div id="traductionTexte"></div>
     </div>
+    <div id="blocMots" hidden>
+      <h2 id="motsTitre">Mots à connaître</h2>
+      <ul id="motsListe"></ul>
+    </div>
   </div>
 
   <details class="section" id="secRequete">
     <summary>Envoyer la requête à la main <span class="note">quand <span class="nom-ia">ChatGPT</span> est déjà ouvert</span></summary>
     <div class="section-corps">
-      <p class="expl">Deux requêtes, deux boutons qui se comportent tous les deux comme le bouton d'envoi principal : ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API. La première est la requête habituelle : correction des fautes de frappe, plus la relecture du naturel. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct.</p>
+      <p class="expl">Deux requêtes, deux boutons qui se comportent tous les deux comme le bouton d'envoi principal : ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API. La première est la requête habituelle : correction des fautes de frappe, plus la relecture du naturel. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct. La troisième ne corrige rien : elle repère les mots qu'un étudiant de niveau A2 ne connaît probablement pas et les colore dans le texte ; un clic sur un mot coloré amène son explication sous les yeux, en gras. Le bouton OK, ou « Accepter les corrections », retire la couleur.</p>
       <div class="boutons" style="margin-top:0">
         <button id="btnCopier">Envoyer la requête de correction</button>
         <button id="btnCopierPonctuation">Envoyer la requête de ponctuation</button>
+        <button id="btnVocabulaire">Envoyer la requête de vocabulaire</button>
       </div>
     </div>
   </details>
@@ -437,7 +458,10 @@
         mots, et signale à part celles qui demanderaient davantage pour être du vietnamien correct.
         Les deux boutons de cette section agissent exactement comme le bouton d'envoi principal, chacun
         avec sa requête. La requête de ponctuation demande en outre la traduction française du texte, qui
-        s'affiche sous les tournures à revoir. La section « Changer de texte » permet de tenir plusieurs
+        s'affiche sous les tournures à revoir. La requête de vocabulaire, elle, ne corrige rien : elle
+        colore en bleu les mots qu'un niveau A2 ne connaît probablement pas, et chaque clic sur un mot
+        coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras. La couleur s'efface
+        avec « OK » ou « Accepter les corrections ». La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -611,8 +635,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V18';
+const VERSION = 'V19';
 const HISTORIQUE = [
+  { v:'V19', d:'sept. 2026', t:"Troisième requête dans « Envoyer la requête à la main » : le vocabulaire. L'IA renvoie le texte inchangé, les mots difficiles pour un niveau A2 entourés d'accolades, et leur explication en français. La page colore ces mots en bleu dans l'éditeur ; un clic sur l'un d'eux fait défiler la fenêtre du bas jusqu'à son explication et la met en gras. Si le texte renvoyé s'écarte de l'original, le texte d'origine est conservé et les mots y sont retrouvés par recherche." },
   { v:'V18', d:'sept. 2026', t:"La requête de ponctuation demande une troisième partie : la traduction française du texte ponctué, introduite par sa propre ligne repère. Elle s'affiche dans une nouvelle section « Traduction en français », sous les tournures à revoir, dans la même fenêtre que les modifications." },
   { v:'V17', d:'sept. 2026', t:"Simplification de « Envoyer la requête à la main » : le bouton « Envoi à … » disparaît, et les deux boutons restants se comportent exactement comme le bouton d'envoi principal — ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API — l'un avec la requête de correction, l'autre avec celle de ponctuation." },
   { v:'V16', d:'sept. 2026', t:"La section « Changer de texte » sait interroger le dépôt : « Rechercher les textes dans GitHub » liste les noms contenus dans le fichier, et « Charger ce texte » installe celui qui est choisi — le contenu remplace le texte local de même nom, avec confirmation s'il avait été modifié, ou crée un texte sous ce nom s'il n'existait pas encore." },
@@ -1054,6 +1079,7 @@ function afficherTraduction(traduction){
 }
 
 function afficherResume(changements, remarques, presente, traduction){
+  document.getElementById('blocMots').hidden = true;
   const avecRemarques   = afficherRemarques(remarques || [], !!presente);
   const avecTraduction  = afficherTraduction(traduction || '');
   const blocCorr = document.getElementById('blocCorrections');
@@ -1404,6 +1430,10 @@ const CONSIGNE = "Tu es un correcteur de fautes de frappe en vietnamien. Tu rép
 const SEPARATEUR = '===REMARQUES===';
 const RE_SEPARATEUR = /^[ \t]*=+[ \t]*REMARQUES[ \t]*=+[ \t]*$/im;
 
+/* Ligne qui introduit la liste du vocabulaire difficile. */
+const SEPARATEUR_MOTS = '===MOTS===';
+const RE_MOTS = /^[ \t]*=+[ \t]*MOTS[ \t]*=+[ \t]*$/im;
+
 /* Ligne qui introduit la traduction française, demandée par la requête de ponctuation. */
 const SEPARATEUR_TRAD = '===TRADUCTION===';
 const RE_TRADUCTION = /^[ \t]*=+[ \t]*TRADUCTION[ \t]*=+[ \t]*$/im;
@@ -1510,6 +1540,32 @@ function construireRequetePonctuation(texte){
     "bạn có khỏe không → le pronom « bạn » est neutre et sonne scolaire ici ; en s'adressant à un homme un peu plus âgé, un natif dirait plutôt « anh có khỏe không » (« comment allez-vous ? »).",
     SEPARATEUR_TRAD,
     "Je suis déjà parti à l'école. Comment vas-tu ?",
+    "",
+    "Texte :",
+    texte
+  ].join('\n');
+}
+
+/* Troisième requête : repérer le vocabulaire difficile, sans toucher au texte. */
+function construireRequeteVocabulaire(texte){
+  return [
+    "Voici un texte en vietnamien lu par un francophone de niveau A2 en vietnamien.",
+    "",
+    "Repère tous les mots et expressions qu'un apprenant de ce niveau ne connaît probablement pas : vocabulaire au-delà des quelques centaines de mots les plus courants, mots composés, expressions idiomatiques, termes techniques ou littéraires, et tournures grammaticales inhabituelles à ce niveau. Dans le doute, signale plutôt le mot.",
+    "",
+    "Ta réponse comporte deux parties.",
+    "",
+    "PREMIÈRE PARTIE, au début de la réponse : le texte, rigoureusement inchangé — mêmes mots, même orthographe, même ponctuation, mêmes majuscules, mêmes retours à la ligne. Ne corrige rien, absolument rien. La seule chose que tu ajoutes est une paire d'accolades doubles autour de chaque mot ou expression difficile : {{comme ceci}}. Marque uniquement la première occurrence de chaque mot ou expression, et n'imbrique jamais deux marques.",
+    "",
+    "SECONDE PARTIE, après une ligne contenant exactement " + SEPARATEUR_MOTS + " : une ligne par mot ou expression marqué, dans l'ordre où ils apparaissent dans le texte, sans doublon, sous la forme : le mot ou l'expression exactement tel qu'il est écrit dans le texte, puis une flèche →, puis son explication.",
+    "",
+    "Langue de cette seconde partie : le français, impérativement. L'explication donne d'abord la traduction française du mot dans ce contexte, puis, en une phrase courte, ce qu'il faut en savoir : sens littéral d'un mot composé, registre, emploi habituel, ou nuance par rapport à un synonyme plus courant. Le vietnamien n'y apparaît que pour citer un mot, entre guillemets et suivi de sa traduction.",
+    "",
+    "Exemple de réponse complète :",
+    "Chúng tôi {{tình cờ}} gặp nhau ở {{thư viện}}.",
+    SEPARATEUR_MOTS,
+    "tình cờ → par hasard, fortuitement ; adverbe très courant à l'écrit, souvent placé avant le verbe.",
+    "thư viện → bibliothèque ; mot composé sino-vietnamien, littéralement « salle des livres ».",
     "",
     "Texte :",
     texte
@@ -1685,6 +1741,9 @@ document.getElementById('btnCopier').addEventListener('click', (e) =>
 document.getElementById('btnCopierPonctuation').addEventListener('click', (e) =>
   envoyerRequete(construireRequetePonctuation, e.currentTarget));
 
+document.getElementById('btnVocabulaire').addEventListener('click', (e) =>
+  envoyerRequete(construireRequeteVocabulaire, e.currentTarget));
+
 btnAppliquer.addEventListener('click', async () => {
   if (modeBouton === 'accepter'){ accepterCorrections(false); return; }
   eteindreAttente();
@@ -1705,7 +1764,109 @@ document.getElementById('btnCollerOk').addEventListener('click', () => {
   appliquer(v);
 });
 
+/* ---------- vocabulaire ---------- */
+
+function aplatir(t){ return (t || '').normalize('NFC').replace(/\s+/g, ' ').trim(); }
+function cleMot(m){ return (m || '').normalize('NFC').toLowerCase().replace(/[.,;:!?…«»"'()\[\]]/g, '').trim(); }
+function texteEnHtml(t){ return echapper(t).replace(/\n/g, '<br>'); }
+
+/* Cas normal : l'IA a rendu le texte tel quel, accolades en plus. */
+function surlignerDepuisMarques(marque, mots){
+  return marque.split(/\{\{([\s\S]*?)\}\}/).map((bout, k) => {
+    if (k % 2 === 0) return texteEnHtml(bout);
+    const i = mots.findIndex(m => cleMot(m.mot) === cleMot(bout));
+    return '<span class="dur" data-i="' + i + '" title="Voir l\'explication">' + texteEnHtml(bout) + '</span>';
+  }).join('');
+}
+
+/* Repli : le texte renvoyé s'écarte de l'original, on surligne l'original. */
+function surlignerParRecherche(reference, mots){
+  const bas = reference.normalize('NFC').toLowerCase();
+  const zones = [];
+  mots.forEach((m, i) => {
+    const cible = (m.mot || '').normalize('NFC').toLowerCase().trim();
+    if (!cible) return;
+    let depart = 0, pos;
+    while ((pos = bas.indexOf(cible, depart)) !== -1){
+      const fin = pos + cible.length;
+      if (!zones.some(z => pos < z.fin && fin > z.debut)){ zones.push({ debut:pos, fin, i }); break; }
+      depart = pos + 1;
+    }
+  });
+  zones.sort((a, b) => a.debut - b.debut);
+  let html = '', curseur = 0;
+  zones.forEach(z => {
+    html += texteEnHtml(reference.slice(curseur, z.debut));
+    html += '<span class="dur" data-i="' + z.i + '" title="Voir l\'explication">' +
+            texteEnHtml(reference.slice(z.debut, z.fin)) + '</span>';
+    curseur = z.fin;
+  });
+  return html + texteEnHtml(reference.slice(curseur));
+}
+
+function afficherMots(mots){
+  document.getElementById('blocCorrections').hidden = true;
+  afficherRemarques([], false);
+  afficherTraduction('');
+  const bloc = document.getElementById('blocMots');
+  const liste = document.getElementById('motsListe');
+  if (!mots.length){ bloc.hidden = true; liste.innerHTML = ''; resume.style.display = 'none'; return; }
+  bloc.hidden = false;
+  document.getElementById('motsTitre').textContent = mots.length === 1
+    ? '1 mot à connaître' : mots.length + ' mots à connaître';
+  liste.innerHTML = mots.map((m, i) =>
+    '<li id="mot-' + i + '">' +
+    (m.mot ? '<span class="mot" lang="vi">' + echapper(m.mot) + '</span>' : '') +
+    '<span class="quoi">' + echapper(m.quoi) + '</span></li>').join('');
+  resume.style.display = 'block';
+}
+
+function appliquerVocabulaire(brut){
+  const t = (brut || '').replace(/\r/g, '');
+  const m = t.match(RE_MOTS);
+  const i = t.indexOf(m[0]);
+  const marque = nettoyerReponse(t.slice(0, i));
+  const mots = analyserRemarques(t.slice(i + m[0].length)).map(r => ({ mot: r.phrase, quoi: r.quoi }));
+
+  const reference = texteEnvoye || texteEditeur();
+  if (!reference){ message("Aucun texte d'origine.", true); return; }
+  if (!mots.length){
+    afficherMots([]);
+    message(nomIA() + " ne signale aucun mot difficile dans ce texte.");
+    return;
+  }
+
+  const sansMarques = marque.replace(/\{\{|\}\}/g, '');
+  const conforme = aplatir(sansMarques) === aplatir(reference);
+
+  htmlAvantCorrection = editeur.innerHTML;
+  editeur.innerHTML = conforme
+    ? surlignerDepuisMarques(marque, mots)
+    : surlignerParRecherche(reference, mots);
+  sauver();
+  majCompteur();
+  eteindreAttente();
+  passerEnModeAppliquer();
+  afficherMots(mots);
+  message(mots.length + (mots.length > 1 ? ' mots colorés' : ' mot coloré') +
+          ' : clique sur un mot pour lire son explication.' +
+          (conforme ? '' : ' Le texte renvoyé différait de l\'original : ton texte a été conservé tel quel.'));
+}
+
+/* Clic sur un mot coloré : son explication est amenée à l'écran, en gras. */
+editeur.addEventListener('click', (e) => {
+  const cible = e.target && e.target.closest ? e.target.closest('.dur') : null;
+  if (!cible) return;
+  document.querySelectorAll('#motsListe li.vise, #editeur .dur.vise').forEach(n => n.classList.remove('vise'));
+  cible.classList.add('vise');
+  const li = document.getElementById('mot-' + cible.dataset.i);
+  if (!li) return;
+  li.classList.add('vise');
+  li.scrollIntoView({ behavior:'smooth', block:'center' });
+});
+
 function appliquer(brut){
+  if (RE_MOTS.test(brut || '')){ appliquerVocabulaire(brut); return; }
   const parties = decouperReponse(brut);
   const reponse = nettoyerReponse(parties.texte);
   if (!reponse){ message("Le presse-papier est vide.", true); return; }
