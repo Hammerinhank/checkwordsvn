@@ -258,7 +258,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V13</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V14</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -294,10 +294,11 @@
   <details class="section" id="secRequete">
     <summary>Envoyer la requête à la main <span class="note">quand <span class="nom-ia">ChatGPT</span> est déjà ouvert</span></summary>
     <div class="section-corps">
-      <p class="expl">Deux requêtes à copier, sans ouvrir de nouvel onglet. La première est la requête habituelle : correction des fautes de frappe, plus la relecture du naturel. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct. Dans les deux cas le texte est mémorisé comme référence de comparaison, et la réponse se colle avec « Appliquer la correction ».</p>
+      <p class="expl">Deux requêtes à copier, plus un bouton d'envoi. Après une copie, « Envoi » s'allume en vert vif et transmet la requête qui vient d'être copiée, sans la reconstruire : il ouvre l'IA avec la requête pré-remplie, ou l'appelle directement en mode API. La première est la requête habituelle : correction des fautes de frappe, plus la relecture du naturel. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct. Dans les deux cas le texte est mémorisé comme référence de comparaison, et la réponse se colle avec « Appliquer la correction ».</p>
       <div class="boutons" style="margin-top:0">
         <button id="btnCopier">Copier la requête</button>
         <button id="btnCopierPonctuation">Copier la requête de ponctuation</button>
+        <button id="btnEnvoiRequete">Envoi</button>
       </div>
     </div>
   </details>
@@ -413,7 +414,10 @@
         modifications, dans « Tournures à revoir », et ne touchent jamais au texte de l'éditeur. La section
         « Envoyer la requête à la main » offre en plus une requête de ponctuation, pour un texte saisi d'un
         seul tenant : l'IA y découpe les phrases, pose la ponctuation et les majuscules sans toucher aux
-        mots, et signale à part celles qui demanderaient davantage pour être du vietnamien correct. La section « Changer de texte » permet de tenir plusieurs
+        mots, et signale à part celles qui demanderaient davantage pour être du vietnamien correct.
+        Le bouton « Envoi à … » de cette même section, allumé en vert vif juste après une copie, transmet
+        la requête copiée telle quelle, sans la reconstruire — pratique pour changer de requête sans
+        repasser par le bouton principal. La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -587,8 +591,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V13';
+const VERSION = 'V14';
 const HISTORIQUE = [
+  { v:'V14', d:'sept. 2026', t:"Un bouton « Envoi à … » à droite des deux boutons de copie transmet la requête qui vient d'être copiée, celle de correction comme celle de ponctuation : ouverture de l'IA avec la requête pré-remplie, ou appel direct en mode API. Il passe au vert vif dès qu'une requête est copiée et retrouve sa couleur normale au premier clic, où qu'il soit fait." },
   { v:'V13', d:'sept. 2026', t:"Un second bouton « Copier la requête de ponctuation » dans « Envoyer la requête à la main ». Il demande à l'IA de découper un texte non ponctué en phrases, d'y placer la ponctuation et les majuscules et d'en corriger les défauts de casse, sans ajouter ni retirer de mot — puis, dans la seconde partie de la réponse, de commenter les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct." },
   { v:'V12', d:'sept. 2026', t:"Un bouton « OK », cadré à droite sur la ligne des boutons principaux, s'allume en vert vif juste après l'application d'une correction. Un clic dessus fait la même chose que « Supprimer les mots barrés » ; il retrouve sa couleur normale au clic, ou dès qu'on clique ailleurs dans la page." },
   { v:'V11', d:'sept. 2026', t:"La requête demande à l'IA une réponse en deux parties séparées par une ligne repère : le texte corrigé, puis les phrases qui restent bancales ou sonneraient étrangement à un locuteur natif, chacune avec ce qui cloche et la formulation attendue. Cette seconde partie s'affiche dans une nouvelle section « Tournures à revoir », sous la liste des modifications, sans jamais modifier le texte de l'éditeur." },
@@ -622,6 +627,7 @@ const resumeTitre = document.getElementById('resumeTitre');
 const btnAppliquer= document.getElementById('btnAppliquer');
 const btnEnvoyer  = document.getElementById('btnEnvoyer');
 const btnOk       = document.getElementById('btnOk');
+const btnEnvoiRequete = document.getElementById('btnEnvoiRequete');
 const btnGhEnvoyer= document.getElementById('btnGhEnvoyer');
 const sousTitre   = document.getElementById('sousTitre');
 const champCle    = document.getElementById('cleApi');
@@ -706,6 +712,10 @@ function majTextesIA(){
     ? ('Écris ton texte vietnamien et lance la correction : <span class="nom-ia">' + n + '</span> répond directement ici, les mots corrigés apparaissent en rouge.')
     : ('Écris ton texte vietnamien, envoie-le à <span class="nom-ia">' + n + '</span>, puis recolle sa réponse : les mots corrigés apparaissent en rouge.');
   document.getElementById('titreColler').textContent = 'Colle la réponse de ' + n;
+  btnEnvoiRequete.textContent = 'Envoi à ' + n;
+  btnEnvoiRequete.title = modeApi()
+    ? ('Envoyer à ' + n + ', par son API, la requête qui vient d\'être copiée')
+    : ('Ouvrir ' + n + ' avec la requête qui vient d\'être copiée');
   document.getElementById('btnParams').title =
     'Paramètres — ' + n + (modeApi() ? ' par API' : ' par onglet web');
   if (modeBouton === 'appliquer') passerEnModeAppliquer();
@@ -823,8 +833,12 @@ function allumerOk(){
 }
 function eteindreOk(){ btnOk.classList.remove('attente'); }
 
+/* Le bouton d'envoi de la requête copiée s'éteint au premier clic, où qu'il soit. */
+function eteindreEnvoiRequete(){ btnEnvoiRequete.classList.remove('attente'); }
+
 document.addEventListener('click', (e) => {
   if (e.target !== btnOk && !btnOk.contains(e.target)) eteindreOk();
+  eteindreEnvoiRequete();
 });
 
 btnOk.addEventListener('click', () => {
@@ -1533,15 +1547,65 @@ btnEnvoyer.addEventListener('click', async () => {
     : nomIA() + " est ouvert. La copie automatique a échoué : ouvre « Envoyer la requête à la main ».");
 });
 
+/* Dernière requête copiée, que le bouton « Envoi à … » retransmet telle quelle. */
+let requeteCopiee = null;
+
 async function copierRequete(construire, quoi){
   const texte = texteEditeur();
   if (!texte){ message("Écris d'abord un texte à corriger.", true); return; }
-  const ok = await copier(construire(texte));
+  const requete = construire(texte);
+  const ok = await copier(requete);
+  requeteCopiee = requete;
   texteEnvoye = texte;
   sauver();
   if (ok){ passerEnModeAppliquer(); armerAttente(); }
-  message(ok ? "Requête " + quoi + " copiée. Colle-la dans " + nomIA() + "." : "La copie a échoué.", !ok);
+  setTimeout(() => btnEnvoiRequete.classList.add('attente'), 0);   // après le clic en cours
+  message(ok ? "Requête " + quoi + " copiée. Colle-la dans " + nomIA() + ", ou clique « Envoi à " + nomIA() + " »."
+             : "La copie a échoué, mais « Envoi à " + nomIA() + " » peut encore transmettre la requête.", !ok);
 }
+
+btnEnvoiRequete.addEventListener('click', async () => {
+  if (!requeteCopiee){
+    message("Copie d'abord l'une des deux requêtes ci-contre.", true);
+    return;
+  }
+
+  if (modeApi()){
+    const r = reglagesIA();
+    if (!r.cle){
+      message('Ajoute ta clé API ' + nomIA() + ' dans les paramètres (icône ⚙️).', true);
+      majFormulaireParams();
+      messageApi('Clé manquante pour ' + nomIA() + '.', true);
+      document.getElementById('dlgParams').showModal();
+      return;
+    }
+    if (!r.modele){ message('Aucun modèle indiqué dans les paramètres.', true); return; }
+    eteindreAttente();
+    const libelle = btnEnvoiRequete.textContent;
+    btnEnvoiRequete.disabled = true;
+    btnEnvoiRequete.textContent = 'Correction en cours…';
+    message(nomIA() + ' relit le texte…');
+    const t0 = performance.now();
+    try {
+      const reponse = await ia().appel(requeteCopiee, r);
+      const duree = secondesDepuis(t0);
+      if (!reponse){ message(nomIA() + " a renvoyé une réponse vide.", true); return; }
+      appliquer(reponse);
+      etat.textContent += ' Réponse en ' + duree + ' s.';
+    } catch (e) {
+      message('Appel à ' + nomIA() + ' impossible : ' + e.message, true);
+    } finally {
+      btnEnvoiRequete.disabled = false;
+      btnEnvoiRequete.textContent = libelle;
+    }
+    return;
+  }
+
+  window.open(ia().url(requeteCopiee), '_blank', 'noopener');
+  passerEnModeAppliquer();
+  armerAttente();
+  message(nomIA() + " est ouvert avec la requête copiée. Reviens ici avec sa réponse.");
+});
 
 document.getElementById('btnCopier').addEventListener('click',
   () => copierRequete(construireRequete, 'de correction'));
