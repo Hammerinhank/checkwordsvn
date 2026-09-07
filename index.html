@@ -87,6 +87,7 @@
     padding:10px 14px;cursor:pointer;
   }
   button:hover{background:#F4F6F3}
+  button:disabled{opacity:.55;cursor:default}
   button:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
   button.principal{background:var(--jade);border-color:var(--jade);color:#fff;font-weight:600}
   button.principal:hover{background:#0B5A49}
@@ -137,7 +138,7 @@
   .section-corps{padding:0 16px 16px;border-top:1px solid var(--trait);padding-top:14px}
   .section-corps p.expl{margin:0 0 10px;color:var(--encre-douce);font-size:.9rem;max-width:60ch}
 
-  /* Formulaire GitHub */
+  /* Formulaires */
   .champs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media (max-width:520px){.champs{grid-template-columns:1fr}}
   .champ{display:flex;flex-direction:column;gap:4px}
@@ -154,12 +155,12 @@
 
   dialog{
     border:1px solid var(--trait);border-radius:12px;padding:0;
-    max-width:min(560px,92vw);width:100%;background:var(--carte);color:var(--encre);
+    max-width:min(600px,94vw);width:100%;background:var(--carte);color:var(--encre);
   }
   dialog::backdrop{background:rgba(24,33,30,.45)}
   .modal-tete{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--trait)}
   .modal-tete h2{margin:0;font-size:1.05rem}
-  .modal-corps{padding:16px;max-height:60vh;overflow:auto}
+  .modal-corps{padding:16px;max-height:72vh;overflow:auto}
   .modal-pied{padding:12px 16px;border-top:1px solid var(--trait);display:flex;gap:8px;justify-content:flex-end}
   #zoneColle{width:100%;min-height:140px;font-family:var(--serif);font-size:1.05rem;padding:10px;border:1px solid var(--trait);border-radius:8px;resize:vertical}
   .fermer{border:none;background:none;font-size:1.2rem;line-height:1;padding:6px 8px;cursor:pointer;color:var(--encre-douce)}
@@ -168,13 +169,18 @@
   .hist li:last-child{border-bottom:none}
   .hist b{color:var(--jade)}
 
-  /* Paramètres : choix de l'IA */
-  .expl-modal{margin:0 0 14px;color:var(--encre-douce);font-size:.9rem}
-  .choix-ia{display:grid;gap:10px}
+  /* Paramètres */
+  .bloc-param{margin-bottom:20px}
+  .bloc-param > h3{
+    margin:0 0 4px;font-size:.82rem;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--jade);
+  }
+  .bloc-param > p.expl-modal{margin:0 0 10px;color:var(--encre-douce);font-size:.88rem}
+  .choix-ia{display:grid;gap:9px}
   .choix{
     display:flex;align-items:flex-start;gap:11px;
     border:1px solid var(--trait);border-radius:var(--rayon);
-    padding:12px 14px;background:#FCFDFC;cursor:pointer;
+    padding:11px 13px;background:#FCFDFC;cursor:pointer;
   }
   .choix:hover{background:#F4F6F3}
   .choix.actif{border-color:var(--jade);background:var(--jade-clair)}
@@ -182,7 +188,33 @@
   .choix-corps{display:flex;flex-direction:column;gap:2px}
   .choix-corps b{font-size:1rem}
   .choix-corps small{color:var(--encre-douce);font-size:.86rem}
-  #etatParams{font-size:.88rem;color:var(--jade);min-height:1.3em;margin-top:12px}
+  #etatParams,#etatApi{font-size:.88rem;color:var(--jade);min-height:1.3em;margin-top:10px}
+  #etatParams.alerte,#etatApi.alerte{color:var(--laque)}
+  #blocApi[hidden]{display:none}
+  .avertissement{
+    font-size:.85rem;color:#7A3B12;background:#FDF3E7;border:1px solid #F0DCC2;
+    border-radius:8px;padding:9px 11px;margin:10px 0 0;
+  }
+
+  /* Explications repliables dans les paramètres */
+  details.expli{border-top:1px solid var(--trait);padding-top:10px;margin-top:10px}
+  details.expli > summary{
+    list-style:none;cursor:pointer;font-size:.92rem;font-weight:600;color:var(--jade);
+    display:flex;align-items:center;gap:8px;padding:2px 0;
+  }
+  details.expli > summary::-webkit-details-marker{display:none}
+  details.expli > summary::before{content:'▸';transition:transform .15s ease}
+  details.expli[open] > summary::before{transform:rotate(90deg)}
+  details.expli .texte{font-size:.88rem;color:var(--encre-douce);padding:6px 0 2px}
+  details.expli .texte p{margin:0 0 8px}
+  details.expli .texte ul{margin:0 0 8px;padding-left:18px}
+  details.expli .texte li{margin:3px 0}
+  details.expli .texte b{color:var(--encre)}
+  code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.86em;background:#F1F4F0;border:1px solid var(--trait);
+    border-radius:5px;padding:1px 4px;
+  }
 
   .aide{font-size:.88rem;color:var(--encre-douce);margin:18px 0 0;max-width:62ch}
 
@@ -198,11 +230,11 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V6</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V7</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
-  <p class="sous-titre">Écris ton texte vietnamien, envoie-le à <span class="nom-ia">ChatGPT</span>, puis recolle sa réponse : les mots corrigés apparaissent en rouge.</p>
+  <p class="sous-titre" id="sousTitre">Écris ton texte vietnamien, envoie-le à <span class="nom-ia">ChatGPT</span>, puis recolle sa réponse : les mots corrigés apparaissent en rouge.</p>
 
   <div class="carte">
     <div class="zone-titre">
@@ -227,7 +259,7 @@
   <details class="section" id="secRequete">
     <summary>Envoyer la requête à la main <span class="note">quand <span class="nom-ia">ChatGPT</span> est déjà ouvert</span></summary>
     <div class="section-corps">
-      <p class="expl">Copie la requête complète (texte + consignes de correction) sans ouvrir de nouvel onglet. Le texte est mémorisé comme référence de comparaison, exactement comme avec le bouton d'envoi.</p>
+      <p class="expl">Copie la requête complète (texte + consignes de correction) sans ouvrir de nouvel onglet. Le texte est mémorisé comme référence de comparaison, exactement comme avec le bouton d'envoi. Utile aussi en mode API, si tu préfères ponctuellement passer par l'interface web.</p>
       <div class="boutons" style="margin-top:0">
         <button id="btnCopier">Copier la requête</button>
       </div>
@@ -259,7 +291,7 @@
   <details class="section" id="secGit">
     <summary>Stocker le texte sur GitHub <span class="note">identifiants, envoi, récupération</span></summary>
     <div class="section-corps">
-      <p class="expl">Le texte (avec ses mots en rouge), le texte envoyé à l'IA et la date sont enregistrés dans un fichier JSON du dépôt. Le jeton reste dans ce navigateur et n'est jamais écrit dans le dépôt : utilise un dépôt privé et un jeton limité à ce dépôt.</p>
+      <p class="expl">Le texte (avec ses mots en rouge), le texte envoyé à l'IA et la date sont enregistrés dans un fichier JSON du dépôt. Ni le jeton GitHub ni les clés API ne sont écrits dans le dépôt : ils restent dans ce navigateur. Utilise un dépôt privé et un jeton limité à ce dépôt.</p>
 
       <div class="champs">
         <div class="champ">
@@ -299,14 +331,16 @@
   </details>
 
   <p class="aide">
-    L'icône ⚙️ en haut de la page choisit l'IA qui vérifie le texte : <span class="nom-ia">ChatGPT</span> est celle
-    utilisée en ce moment. « Envoyer à <span class="nom-ia">ChatGPT</span> » ouvre cette IA avec la requête pré-remplie et allume en vert le bouton
-    « Appliquer la correction » : c'est le rappel qu'une réponse est attendue. Ce bouton suit ensuite le cycle
-    du travail : il reprend sa couleur normale et devient « Accepter les corrections » une fois le texte
+    L'icône ⚙️ en haut de la page règle l'IA de vérification (<span class="nom-ia">ChatGPT</span> en ce moment) et la façon
+    de l'atteindre : par un onglet web, ou par un appel direct à son API, qui écrit la correction dans l'éditeur
+    en une ou deux secondes sans copier-coller. En mode onglet, le bouton d'envoi ouvre l'IA avec la requête
+    pré-remplie et allume en vert « Appliquer la correction » : c'est le rappel qu'une réponse est attendue.
+    Ce bouton suit ensuite le cycle du travail : il devient « Accepter les corrections » une fois le texte
     corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Dans le texte, un mot en rouge
-    a été corrigé, un mot en rouge gras est un ajout proposé, un mot en rouge barré est une
-    suppression proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés toi-même. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part vers
-    l'IA — le rouge n'est jamais envoyé.
+    a été corrigé, un mot en rouge gras est un ajout proposé, un mot en rouge barré est une suppression
+    proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés
+    toi-même. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part
+    vers l'IA — le rouge n'est jamais envoyé.
   </p>
 
 </div>
@@ -317,23 +351,110 @@
     <button class="fermer" data-fermer aria-label="Fermer">✕</button>
   </div>
   <div class="modal-corps">
-    <p class="expl-modal">Choisis l'intelligence artificielle qui vérifiera ton texte. Le bouton d'envoi, l'onglet ouvert et les libellés de la page suivent ce choix, conservé dans ce navigateur. La requête envoyée et le traitement de la réponse sont identiques dans les deux cas.</p>
-    <div class="choix-ia">
-      <label class="choix" for="iaChatgpt">
-        <input type="radio" name="ia" id="iaChatgpt" value="chatgpt">
-        <span class="choix-corps">
-          <b>ChatGPT</b>
-          <small>Ouvre chatgpt.com avec la requête pré-remplie.</small>
-        </span>
-      </label>
-      <label class="choix" for="iaClaude">
-        <input type="radio" name="ia" id="iaClaude" value="claude">
-        <span class="choix-corps">
-          <b>Claude</b>
-          <small>Ouvre claude.ai avec la requête pré-remplie.</small>
-        </span>
-      </label>
+
+    <div class="bloc-param">
+      <h3>Intelligence artificielle</h3>
+      <p class="expl-modal">Celle qui vérifiera le texte. La requête envoyée et le traitement de la réponse sont identiques dans les deux cas.</p>
+      <div class="choix-ia">
+        <label class="choix" for="iaChatgpt">
+          <input type="radio" name="ia" id="iaChatgpt" value="chatgpt">
+          <span class="choix-corps">
+            <b>ChatGPT</b>
+            <small>OpenAI — chatgpt.com ou api.openai.com.</small>
+          </span>
+        </label>
+        <label class="choix" for="iaClaude">
+          <input type="radio" name="ia" id="iaClaude" value="claude">
+          <span class="choix-corps">
+            <b>Claude</b>
+            <small>Anthropic — claude.ai ou api.anthropic.com.</small>
+          </span>
+        </label>
+      </div>
     </div>
+
+    <div class="bloc-param">
+      <h3>Mode d'envoi</h3>
+      <p class="expl-modal">Passer par un onglet web ne coûte rien mais impose le copier-coller et le temps de chargement du site. L'appel direct par API répond en une à deux secondes et écrit la correction tout seul dans l'éditeur, contre une clé API et quelques fractions de centime par correction.</p>
+      <div class="choix-ia">
+        <label class="choix" for="modeOnglet">
+          <input type="radio" name="mode" id="modeOnglet" value="onglet">
+          <span class="choix-corps">
+            <b>Onglet web</b>
+            <small>Ouvre le site avec la requête pré-remplie ; tu recolles la réponse.</small>
+          </span>
+        </label>
+        <label class="choix" for="modeApi">
+          <input type="radio" name="mode" id="modeApi" value="api">
+          <span class="choix-corps">
+            <b>Appel direct par API <span style="color:var(--jade)">— réponse quasi instantanée</span></b>
+            <small>La correction arrive seule dans l'éditeur, sans onglet ni presse-papier.</small>
+          </span>
+        </label>
+      </div>
+
+      <div id="blocApi" hidden>
+        <div class="champs" style="margin-top:12px">
+          <div class="champ large">
+            <label for="cleApi" id="labCle">Clé API</label>
+            <input id="cleApi" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="sk-…">
+          </div>
+          <div class="champ large">
+            <label for="modeleApi" id="labModele">Modèle</label>
+            <input id="modeleApi" type="text" list="listeModeles" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="modèle">
+            <datalist id="listeModeles"></datalist>
+          </div>
+        </div>
+        <div class="boutons" style="margin-top:8px">
+          <button class="petit" id="btnTesterApi">Tester la clé</button>
+          <button class="petit" id="btnModeleRapide">Modèle rapide conseillé</button>
+          <button class="petit" id="btnOublierCle">Oublier la clé</button>
+        </div>
+        <div id="etatApi"></div>
+        <p class="avertissement">La clé reste dans le stockage local de ce navigateur, comme le jeton GitHub : elle n'est jamais envoyée dans le dépôt. Ne l'installe pas sur un appareil partagé, et fixe-lui un plafond de dépense mensuel dans la console du fournisseur.</p>
+      </div>
+    </div>
+
+    <div class="bloc-param" style="margin-bottom:0">
+      <h3>Pour comprendre</h3>
+
+      <details class="expli">
+        <summary>Pourquoi Claude semble plus lent que ChatGPT en mode onglet</summary>
+        <div class="texte">
+          <p>Le délai ne vient pas du modèle lui-même, mais du chemin emprunté. <code>claude.ai/new?q=…</code> ouvre un onglet neuf : toute l'application se charge, puis la question part, puis le modèle par défaut de ton compte répond. Si ce modèle appartient à la famille Opus et que la réflexion étendue est active, il « réfléchit » plusieurs secondes avant d'écrire — du gaspillage pur pour une correction de fautes de frappe. ChatGPT paraît instantané parce que son onglet démarre plus vite et que son modèle par défaut répond sans phase de réflexion.</p>
+          <p>Trois façons d'y remédier :</p>
+          <ul>
+            <li><b>Régler claude.ai</b> : choisir Haiku comme modèle par défaut et désactiver la réflexion étendue. On passe typiquement de quinze secondes à trois ou quatre.</li>
+            <li><b>Garder un onglet Claude déjà ouvert</b> et utiliser « Envoyer la requête à la main » plutôt que le bouton d'envoi : on économise le démarrage de l'application, qui pèse une bonne part du délai.</li>
+            <li><b>Passer en mode API</b> ci-dessus : on court-circuite entièrement l'interface web, et la réponse revient en une à deux secondes.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="expli">
+        <summary>Ce que fait le mode API, et ce qu'il coûte</summary>
+        <div class="texte">
+          <p>La page appelle directement <code>api.anthropic.com/v1/messages</code> ou <code>api.openai.com/v1/chat/completions</code> depuis ton navigateur, avec la même requête que celle envoyée en mode onglet. Aucun serveur intermédiaire : le texte va de ton navigateur au fournisseur, et la réponse revient s'afficher en rouge dans l'éditeur. Côté Anthropic, l'appel depuis un navigateur exige l'en-tête <code>anthropic-dangerous-direct-browser-access</code>, que la page ajoute d'elle-même.</p>
+          <p>La clé se crée dans la console du fournisseur : <code>console.anthropic.com</code> pour Claude, <code>platform.openai.com</code> pour ChatGPT. Elle est facturée à l'usage, indépendamment d'un abonnement ChatGPT Plus ou Claude Pro, qui ne donnent pas accès à l'API. Pour des phrases de quelques dizaines de mots et un modèle rapide, chaque correction se compte en fractions de centime.</p>
+          <p>Deux limites à connaître : la page doit être servie en <code>https</code> (GitHub Pages convient ; un fichier ouvert en <code>file://</code> peut être refusé par le contrôle d'origine), et une clé invalide ou sans crédit renvoie une erreur 401 ou 429 affichée sous le bouton « Tester la clé ».</p>
+        </div>
+      </details>
+
+      <details class="expli">
+        <summary>Quel modèle choisir chez Claude (et chez ChatGPT)</summary>
+        <div class="texte">
+          <p>Corriger des fautes de frappe est une tâche mécanique : le modèle le plus rapide et le moins cher suffit, et c'est même lui qui donne la meilleure expérience ici, puisque la vitesse fait tout.</p>
+          <ul>
+            <li><b>claude-haiku-4-5</b> — le plus rapide et le moins cher. Le choix conseillé pour cette application.</li>
+            <li><b>claude-sonnet-5</b> — équilibré, un peu plus lent. Utile si tu constates des corrections manquées sur des textes longs ou subtils.</li>
+            <li><b>claude-opus-5</b> — le plus capable, le plus lent, le plus cher. Sans intérêt pour de la correction de frappe.</li>
+          </ul>
+          <p>Chez OpenAI, même logique : un modèle « mini » pour la vitesse, un modèle complet seulement si la qualité l'exige. Le nom du modèle reste modifiable à la main dans le champ ci-dessus : les catalogues évoluent, et un nom refusé provoque une erreur 404 au test, sans autre conséquence.</p>
+          <p>Attention enfin à ne pas confondre ce réglage avec celui de claude.ai : le modèle choisi ici ne s'applique qu'au mode API. En mode onglet, c'est le modèle par défaut de ton compte, réglé sur le site, qui répond.</p>
+        </div>
+      </details>
+    </div>
+
     <div id="etatParams"></div>
   </div>
   <div class="modal-pied"><button class="principal" data-fermer>Fermer</button></div>
@@ -370,8 +491,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V6';
+const VERSION = 'V7';
 const HISTORIQUE = [
+  { v:'V7', d:'sept. 2026', t:"Nouveau mode « appel direct par API » pour les deux IA : la correction revient en une à deux secondes et s'écrit seule dans l'éditeur, sans onglet ni copier-coller. La fenêtre de paramétrage accueille la clé API, le choix du modèle, un test de clé, et trois explications repliables : la lenteur de Claude en mode onglet, le fonctionnement et le coût des API, le choix du modèle." },
   { v:'V6', d:'sept. 2026', t:"Une icône de paramétrage ⚙️ ouvre une fenêtre de réglages où l'on choisit l'IA de vérification : ChatGPT ou Claude. L'envoi ouvre le site choisi et tous les libellés de la page prennent son nom ; le choix est mémorisé dans ce navigateur." },
   { v:'V5', d:'sept. 2026', t:"L'acceptation conserve désormais par défaut les mots rouges barrés qui n'ont pas été effacés à la main. La section « Mettre le texte au propre » offre les deux choix : garder les mots barrés ou les supprimer tous." },
   { v:'V4', d:'sept. 2026', t:"ChatGPT doit désormais marquer ses suppressions [-mot] et ses ajouts [+mot] au lieu de changer le nombre de mots. Les mots proposés à l'ajout s'affichent en rouge gras, ceux proposés à la suppression en rouge barré ; l'acceptation supprime les barrés et garde les ajoutés." },
@@ -383,64 +505,186 @@ const HISTORIQUE = [
 const CLE_TEXTE  = 'correcteur-vn.texte';
 const CLE_ENVOYE = 'correcteur-vn.envoye';
 const CLE_GIT    = 'correcteur-vn.github';
-const CLE_IA     = 'correcteur-vn.ia';
+const CLE_CONF   = 'correcteur-vn.conf';
 
 const editeur     = document.getElementById('editeur');
 const etat        = document.getElementById('etat');
 const etatGit     = document.getElementById('etatGit');
+const etatApi     = document.getElementById('etatApi');
 const compteur    = document.getElementById('compteur');
 const resume      = document.getElementById('resume');
 const resumeListe = document.getElementById('resumeListe');
 const resumeTitre = document.getElementById('resumeTitre');
 const btnAppliquer= document.getElementById('btnAppliquer');
 const btnEnvoyer  = document.getElementById('btnEnvoyer');
+const sousTitre   = document.getElementById('sousTitre');
+const champCle    = document.getElementById('cleApi');
+const champModele = document.getElementById('modeleApi');
 
 let texteEnvoye = localStorage.getItem(CLE_ENVOYE) || '';
 let htmlAvantCorrection = null;
 
-/* ---------- choix de l'IA ---------- */
+/* ---------- description des deux IA ---------- */
 
 const IAS = {
-  chatgpt: { nom:'ChatGPT', url: t => 'https://chatgpt.com/?q=' + encodeURIComponent(t) },
-  claude:  { nom:'Claude',  url: t => 'https://claude.ai/new?q=' + encodeURIComponent(t) }
+  chatgpt: {
+    nom: 'ChatGPT',
+    url: t => 'https://chatgpt.com/?q=' + encodeURIComponent(t),
+    console: 'platform.openai.com',
+    prefixeCle: 'sk-…',
+    modeleRapide: 'gpt-4o-mini',
+    modeles: ['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4o', 'gpt-4.1'],
+    appel: appelOpenAI
+  },
+  claude: {
+    nom: 'Claude',
+    url: t => 'https://claude.ai/new?q=' + encodeURIComponent(t),
+    console: 'console.anthropic.com',
+    prefixeCle: 'sk-ant-…',
+    modeleRapide: 'claude-haiku-4-5-20251001',
+    modeles: ['claude-haiku-4-5-20251001', 'claude-sonnet-5', 'claude-opus-5'],
+    appel: appelAnthropic
+  }
 };
 
-let ia = (localStorage.getItem(CLE_IA) === 'claude') ? 'claude' : 'chatgpt';
+/* ---------- configuration ---------- */
 
-function nomIA(){ return IAS[ia].nom; }
-function urlIA(texte){ return IAS[ia].url(texte); }
+function confDefaut(){
+  return {
+    ia: 'chatgpt',
+    mode: 'onglet',
+    chatgpt: { cle:'', modele: IAS.chatgpt.modeleRapide },
+    claude:  { cle:'', modele: IAS.claude.modeleRapide }
+  };
+}
 
-/* Tous les libellés qui nomment l'IA sont mis à jour d'un coup. */
+function chargerConf(){
+  const d = confDefaut();
+  try {
+    const c = JSON.parse(localStorage.getItem(CLE_CONF) || '{}');
+    if (c.ia === 'claude' || c.ia === 'chatgpt') d.ia = c.ia;
+    if (c.mode === 'api' || c.mode === 'onglet') d.mode = c.mode;
+    ['chatgpt','claude'].forEach(k => {
+      if (c[k] && typeof c[k] === 'object'){
+        if (typeof c[k].cle === 'string') d[k].cle = c[k].cle;
+        if (typeof c[k].modele === 'string' && c[k].modele) d[k].modele = c[k].modele;
+      }
+    });
+  } catch (e) {}
+  /* Reprise du choix d'IA de la V6, s'il existe encore. */
+  const ancien = localStorage.getItem('correcteur-vn.ia');
+  if (ancien && !localStorage.getItem(CLE_CONF) && (ancien === 'claude' || ancien === 'chatgpt')) d.ia = ancien;
+  return d;
+}
+
+let conf = chargerConf();
+
+function enregistrerConf(){
+  localStorage.setItem(CLE_CONF, JSON.stringify(conf));
+}
+
+function ia(){ return IAS[conf.ia]; }
+function nomIA(){ return ia().nom; }
+function reglagesIA(){ return conf[conf.ia]; }
+function modeApi(){ return conf.mode === 'api'; }
+
+/* Tous les libellés qui nomment l'IA ou dépendent du mode. */
 function majTextesIA(){
   const n = nomIA();
   document.querySelectorAll('.nom-ia').forEach(e => { e.textContent = n; });
-  btnEnvoyer.textContent = 'Envoyer à ' + n;
+  btnEnvoyer.textContent = modeApi() ? ('Corriger avec ' + n) : ('Envoyer à ' + n);
+  btnEnvoyer.title = modeApi()
+    ? ('Envoyer le texte à ' + n + ' par son API et afficher la correction ici')
+    : ('Ouvrir ' + n + ' avec la requête pré-remplie');
+  sousTitre.innerHTML = modeApi()
+    ? ('Écris ton texte vietnamien et lance la correction : <span class="nom-ia">' + n + '</span> répond directement ici, les mots corrigés apparaissent en rouge.')
+    : ('Écris ton texte vietnamien, envoie-le à <span class="nom-ia">' + n + '</span>, puis recolle sa réponse : les mots corrigés apparaissent en rouge.');
   document.getElementById('titreColler').textContent = 'Colle la réponse de ' + n;
-  document.getElementById('btnParams').title = 'Paramètres — IA utilisée : ' + n;
+  document.getElementById('btnParams').title =
+    'Paramètres — ' + n + (modeApi() ? ' par API' : ' par onglet web');
   if (modeBouton === 'appliquer') passerEnModeAppliquer();
 }
 
-function majChoixIA(){
+function majFormulaireParams(){
   document.querySelectorAll('input[name="ia"]').forEach(r => {
-    r.checked = (r.value === ia);
+    r.checked = (r.value === conf.ia);
     r.closest('.choix').classList.toggle('actif', r.checked);
   });
+  document.querySelectorAll('input[name="mode"]').forEach(r => {
+    r.checked = (r.value === conf.mode);
+    r.closest('.choix').classList.toggle('actif', r.checked);
+  });
+  document.getElementById('blocApi').hidden = !modeApi();
+
+  const d = ia(), r = reglagesIA();
+  document.getElementById('labCle').textContent = 'Clé API ' + d.nom + ' (créée sur ' + d.console + ')';
+  document.getElementById('labModele').textContent = 'Modèle utilisé par l\'API ' + d.nom;
+  champCle.placeholder = d.prefixeCle;
+  champCle.value = r.cle;
+  champModele.value = r.modele;
+  document.getElementById('listeModeles').innerHTML =
+    d.modeles.map(m => '<option value="' + m + '">').join('');
+}
+
+function messageApi(txt, alerte=false){
+  etatApi.textContent = txt;
+  etatApi.classList.toggle('alerte', !!alerte);
 }
 
 document.querySelectorAll('input[name="ia"]').forEach(r => {
   r.addEventListener('change', () => {
     if (!r.checked) return;
-    ia = (r.value === 'claude') ? 'claude' : 'chatgpt';
-    localStorage.setItem(CLE_IA, ia);
-    majChoixIA();
+    conf.ia = (r.value === 'claude') ? 'claude' : 'chatgpt';
+    enregistrerConf();
+    majFormulaireParams();
     majTextesIA();
-    document.getElementById('etatParams').textContent = 'Les requêtes partiront désormais vers ' + nomIA() + '.';
-    message('IA de vérification : ' + nomIA() + '.');
+    messageApi(modeApi() && !reglagesIA().cle ? ('Ajoute ta clé API ' + nomIA() + ' pour ce mode.') : '', modeApi() && !reglagesIA().cle);
+    message('IA de vérification : ' + nomIA() + (modeApi() ? ' (par API).' : ' (par onglet web).'));
   });
 });
 
+document.querySelectorAll('input[name="mode"]').forEach(r => {
+  r.addEventListener('change', () => {
+    if (!r.checked) return;
+    conf.mode = (r.value === 'api') ? 'api' : 'onglet';
+    enregistrerConf();
+    majFormulaireParams();
+    majTextesIA();
+    messageApi('');
+    if (modeApi() && !reglagesIA().cle) messageApi('Ajoute ta clé API ' + nomIA() + ' pour utiliser ce mode.', true);
+    message(modeApi()
+      ? 'Mode API : ' + nomIA() + ' répondra directement dans la page.'
+      : 'Mode onglet web : ' + nomIA() + ' s\'ouvrira dans un nouvel onglet.');
+  });
+});
+
+champCle.addEventListener('input', () => {
+  reglagesIA().cle = champCle.value.trim();
+  enregistrerConf();
+});
+
+champModele.addEventListener('input', () => {
+  reglagesIA().modele = champModele.value.trim();
+  enregistrerConf();
+});
+
+document.getElementById('btnModeleRapide').addEventListener('click', () => {
+  reglagesIA().modele = ia().modeleRapide;
+  enregistrerConf();
+  champModele.value = ia().modeleRapide;
+  messageApi('Modèle réglé sur ' + ia().modeleRapide + '.');
+});
+
+document.getElementById('btnOublierCle').addEventListener('click', () => {
+  reglagesIA().cle = '';
+  enregistrerConf();
+  champCle.value = '';
+  messageApi('Clé ' + nomIA() + ' effacée de ce navigateur.');
+});
+
 document.getElementById('btnParams').addEventListener('click', () => {
-  majChoixIA();
+  majFormulaireParams();
+  messageApi('');
   document.getElementById('etatParams').textContent = '';
   document.getElementById('dlgParams').showModal();
 });
@@ -649,6 +893,8 @@ function sauver(){
 
 /* ---------- requête vers l'IA ---------- */
 
+const CONSIGNE = "Tu es un correcteur de fautes de frappe en vietnamien. Tu réponds uniquement par le texte corrigé, sans explication ni commentaire.";
+
 function construireRequete(texte){
   return [
     "Voici une phrase (ou un court texte) en vietnamien qui contient peut-être des fautes de frappe.",
@@ -703,13 +949,124 @@ async function copier(texte){
   }
 }
 
+/* ---------- appels directs aux API ---------- */
+
+async function erreurApi(r, fournisseur){
+  let d = '';
+  try { const j = await r.json(); d = (j.error && (j.error.message || j.error.type)) || j.message || ''; } catch (e) {}
+  if (r.status === 401) return 'Clé refusée (401) par ' + fournisseur + " : vérifie qu'elle est valide et complète.";
+  if (r.status === 403) return 'Accès refusé (403) par ' + fournisseur + (d ? ' : ' + d : '.');
+  if (r.status === 404) return "Modèle introuvable (404) : le nom saisi n'existe pas chez " + fournisseur + '.';
+  if (r.status === 429) return 'Quota ou débit dépassé (429) chez ' + fournisseur + " : crédit épuisé, ou trop d'appels rapprochés.";
+  if (r.status >= 500)  return 'Service momentanément indisponible (' + r.status + ') chez ' + fournisseur + '.';
+  return 'Erreur ' + r.status + ' de ' + fournisseur + (d ? ' : ' + d : '') + '.';
+}
+
+async function appelAnthropic(requete, r){
+  const rep = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': r.cle,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: r.modele,
+      max_tokens: 2000,
+      temperature: 0,
+      system: CONSIGNE,
+      messages: [{ role:'user', content: requete }]
+    })
+  });
+  if (!rep.ok) throw new Error(await erreurApi(rep, 'Anthropic'));
+  const d = await rep.json();
+  return (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+}
+
+async function appelOpenAI(requete, r){
+  const rep = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'Authorization': 'Bearer ' + r.cle
+    },
+    body: JSON.stringify({
+      model: r.modele,
+      temperature: 0,
+      messages: [
+        { role:'system', content: CONSIGNE },
+        { role:'user',   content: requete }
+      ]
+    })
+  });
+  if (!rep.ok) throw new Error(await erreurApi(rep, 'OpenAI'));
+  const d = await rep.json();
+  return ((d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '').trim();
+}
+
+function secondesDepuis(t0){
+  return ((performance.now() - t0) / 1000).toFixed(1).replace('.', ',');
+}
+
+async function corrigerParApi(){
+  const texte = texteEditeur();
+  if (!texte){ message("Écris d'abord un texte à corriger.", true); return; }
+  const r = reglagesIA();
+  if (!r.cle){
+    message('Ajoute ta clé API ' + nomIA() + ' dans les paramètres (icône ⚙️).', true);
+    majFormulaireParams();
+    messageApi('Clé manquante pour ' + nomIA() + '.', true);
+    document.getElementById('dlgParams').showModal();
+    return;
+  }
+  if (!r.modele){ message('Aucun modèle indiqué dans les paramètres.', true); return; }
+
+  const requete = construireRequete(texte);
+  texteEnvoye = texte;
+  localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  eteindreAttente();
+  const libelle = btnEnvoyer.textContent;
+  btnEnvoyer.disabled = true;
+  btnEnvoyer.textContent = 'Correction en cours…';
+  message(nomIA() + ' relit le texte…');
+  const t0 = performance.now();
+  try {
+    const reponse = await ia().appel(requete, r);
+    const duree = secondesDepuis(t0);
+    if (!reponse){ message(nomIA() + " a renvoyé une réponse vide.", true); return; }
+    appliquer(reponse);
+    etat.textContent += ' Réponse en ' + duree + ' s.';
+  } catch (e) {
+    message('Appel à ' + nomIA() + ' impossible : ' + e.message, true);
+  } finally {
+    btnEnvoyer.disabled = false;
+    btnEnvoyer.textContent = libelle;
+  }
+}
+
+document.getElementById('btnTesterApi').addEventListener('click', async () => {
+  const r = reglagesIA();
+  if (!r.cle){ messageApi("Saisis d'abord la clé.", true); return; }
+  if (!r.modele){ messageApi("Saisis d'abord le nom du modèle.", true); return; }
+  messageApi('Test en cours…');
+  const t0 = performance.now();
+  try {
+    const rep = await ia().appel('Réponds uniquement par : ok', r);
+    messageApi('Clé et modèle acceptés — réponse en ' + secondesDepuis(t0) + ' s (« ' + rep.slice(0, 40) + ' »).');
+  } catch (e) {
+    messageApi(e.message, true);
+  }
+});
+
 /* ---------- actions principales ---------- */
 
 btnEnvoyer.addEventListener('click', async () => {
+  if (modeApi()){ corrigerParApi(); return; }
   const texte = texteEditeur();
   if (!texte){ message("Écris d'abord un texte à corriger.", true); return; }
   const requete = construireRequete(texte);
-  window.open(urlIA(requete), '_blank', 'noopener');
+  window.open(ia().url(requete), '_blank', 'noopener');
   const ok = await copier(requete);
   texteEnvoye = texte;
   localStorage.setItem(CLE_ENVOYE, texteEnvoye);
@@ -1001,7 +1358,9 @@ document.getElementById('btnGhEnvoyer').addEventListener('click', async () => {
       texte:   editeur.innerHTML,
       brut:    texteEditeur(),
       envoye:  texteEnvoye,
-      ia:      ia,
+      ia:      conf.ia,
+      mode:    conf.mode,
+      modele:  reglagesIA().modele,
       version: VERSION,
       maj:     new Date().toISOString()
     };
@@ -1069,7 +1428,7 @@ document.getElementById('badgeVersion').textContent = VERSION;
 const sauvegarde = localStorage.getItem(CLE_TEXTE);
 if (sauvegarde) editeur.innerHTML = sauvegarde;
 if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
-majChoixIA();
+majFormulaireParams();
 majTextesIA();
 ghCharger();
 majCompteur();
