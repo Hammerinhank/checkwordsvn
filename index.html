@@ -140,6 +140,9 @@
   #remarquesListe .phrase{font-family:var(--serif);font-size:1.02rem;display:block}
   #remarquesListe .quoi{color:var(--encre-douce);display:block}
   #remarquesListe li.rien{list-style:none;margin-left:-20px;color:var(--jade)}
+  #blocTraduction{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
+  #blocCorrections[hidden] + #blocRemarques[hidden] + #blocTraduction{border-top:none;margin-top:0;padding-top:0}
+  #traductionTexte p{margin:6px 0;font-size:.98rem;line-height:1.55}
 
   /* Sections repliables */
   details.section{
@@ -258,7 +261,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V17</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V18</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -288,6 +291,10 @@
     <div id="blocRemarques" hidden>
       <h2 id="remarquesTitre">Tournures à revoir</h2>
       <ul id="remarquesListe"></ul>
+    </div>
+    <div id="blocTraduction" hidden>
+      <h2>Traduction en français</h2>
+      <div id="traductionTexte"></div>
     </div>
   </div>
 
@@ -429,7 +436,8 @@
         seul tenant : l'IA y découpe les phrases, pose la ponctuation et les majuscules sans toucher aux
         mots, et signale à part celles qui demanderaient davantage pour être du vietnamien correct.
         Les deux boutons de cette section agissent exactement comme le bouton d'envoi principal, chacun
-        avec sa requête. La section « Changer de texte » permet de tenir plusieurs
+        avec sa requête. La requête de ponctuation demande en outre la traduction française du texte, qui
+        s'affiche sous les tournures à revoir. La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -603,8 +611,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V17';
+const VERSION = 'V18';
 const HISTORIQUE = [
+  { v:'V18', d:'sept. 2026', t:"La requête de ponctuation demande une troisième partie : la traduction française du texte ponctué, introduite par sa propre ligne repère. Elle s'affiche dans une nouvelle section « Traduction en français », sous les tournures à revoir, dans la même fenêtre que les modifications." },
   { v:'V17', d:'sept. 2026', t:"Simplification de « Envoyer la requête à la main » : le bouton « Envoi à … » disparaît, et les deux boutons restants se comportent exactement comme le bouton d'envoi principal — ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API — l'un avec la requête de correction, l'autre avec celle de ponctuation." },
   { v:'V16', d:'sept. 2026', t:"La section « Changer de texte » sait interroger le dépôt : « Rechercher les textes dans GitHub » liste les noms contenus dans le fichier, et « Charger ce texte » installe celui qui est choisi — le contenu remplace le texte local de même nom, avec confirmation s'il avait été modifié, ou crée un texte sous ce nom s'il n'existait pas encore." },
   { v:'V15', d:'sept. 2026', t:"La requête de ponctuation impose maintenant le français pour les commentaires sur les tournures à revoir : seule la phrase citée reste en vietnamien, et les mots vietnamiens cités sont traduits. Le bouton « Envoi à … » est cadré sur le bord droit de sa section." },
@@ -1033,11 +1042,23 @@ function afficherRemarques(remarques, presente){
   return true;
 }
 
-function afficherResume(changements, remarques, presente){
-  const avecRemarques = afficherRemarques(remarques || [], !!presente);
+function afficherTraduction(traduction){
+  const bloc = document.getElementById('blocTraduction');
+  const zone = document.getElementById('traductionTexte');
+  if (!traduction){ bloc.hidden = true; zone.innerHTML = ''; return false; }
+  bloc.hidden = false;
+  zone.innerHTML = traduction.split(/\n{2,}/)
+    .map(par => '<p>' + echapper(par.trim()).replace(/\n/g, '<br>') + '</p>')
+    .join('');
+  return true;
+}
+
+function afficherResume(changements, remarques, presente, traduction){
+  const avecRemarques   = afficherRemarques(remarques || [], !!presente);
+  const avecTraduction  = afficherTraduction(traduction || '');
   const blocCorr = document.getElementById('blocCorrections');
   blocCorr.hidden = !changements.length;
-  if (!changements.length && !avecRemarques){ resume.style.display='none'; return; }
+  if (!changements.length && !avecRemarques && !avecTraduction){ resume.style.display='none'; return; }
   resume.style.display = 'block';
   if (!changements.length) return;
   resumeTitre.textContent = changements.length === 1 ? '1 modification' : changements.length + ' modifications';
@@ -1383,6 +1404,10 @@ const CONSIGNE = "Tu es un correcteur de fautes de frappe en vietnamien. Tu rép
 const SEPARATEUR = '===REMARQUES===';
 const RE_SEPARATEUR = /^[ \t]*=+[ \t]*REMARQUES[ \t]*=+[ \t]*$/im;
 
+/* Ligne qui introduit la traduction française, demandée par la requête de ponctuation. */
+const SEPARATEUR_TRAD = '===TRADUCTION===';
+const RE_TRADUCTION = /^[ \t]*=+[ \t]*TRADUCTION[ \t]*=+[ \t]*$/im;
+
 function construireRequete(texte){
   return [
     "Voici une phrase (ou un court texte) en vietnamien qui contient peut-être des fautes de frappe.",
@@ -1418,14 +1443,25 @@ function construireRequete(texte){
 
 /* La réponse arrive en deux parties : le texte corrigé, puis les remarques. */
 function decouperReponse(brut){
-  const t = (brut || '').replace(/\r/g, '');
+  let t = (brut || '').replace(/\r/g, '');
+
+  /* La traduction, quand elle est demandée, ferme la réponse. */
+  let traduction = '';
+  const mt = t.match(RE_TRADUCTION);
+  if (mt){
+    const j = t.indexOf(mt[0]);
+    traduction = t.slice(j + mt[0].length).replace(/^```[^\n]*\n?|```\s*$/g, '').trim();
+    t = t.slice(0, j);
+  }
+
   const m = t.match(RE_SEPARATEUR);
-  if (!m) return { texte: t, remarques: [], presente: false };
+  if (!m) return { texte: t, remarques: [], presente: false, traduction };
   const i = t.indexOf(m[0]);
   return {
     texte: t.slice(0, i),
     remarques: analyserRemarques(t.slice(i + m[0].length)),
-    presente: true
+    presente: true,
+    traduction
   };
 }
 
@@ -1458,18 +1494,22 @@ function construireRequetePonctuation(texte){
     "- garde les retours à la ligne existants ;",
     "- si une phrase ne peut pas devenir du vietnamien correct par la seule ponctuation, laisse ses mots tels quels dans la première partie et signale-la dans la seconde.",
     "",
-    "Ta réponse comporte deux parties, séparées par une ligne contenant exactement " + SEPARATEUR + " :",
+    "Ta réponse comporte trois parties, introduites par des lignes repères :",
     "",
-    "PREMIÈRE PARTIE, avant cette ligne : le texte ponctué en vietnamien, et rien d'autre — sans guillemets d'encadrement, sans explication, sans commentaire.",
+    "PREMIÈRE PARTIE, au début de la réponse : le texte ponctué en vietnamien, et rien d'autre — sans guillemets d'encadrement, sans explication, sans commentaire.",
     "",
-    "SECONDE PARTIE, après cette ligne : uniquement les phrases qui auraient besoin d'un changement allant au-delà de la ponctuation et de la casse pour être du vietnamien correct. Une phrase par ligne, sous la forme : la phrase vietnamienne concernée, puis une flèche →, puis l'explication. Si la ponctuation a suffi partout, écris seulement RAS sur une ligne.",
+    "SECONDE PARTIE, après une ligne contenant exactement " + SEPARATEUR + " : uniquement les phrases qui auraient besoin d'un changement allant au-delà de la ponctuation et de la casse pour être du vietnamien correct. Une phrase par ligne, sous la forme : la phrase vietnamienne concernée, puis une flèche →, puis l'explication. Si la ponctuation a suffi partout, écris seulement RAS sur une ligne.",
     "",
     "Langue de cette seconde partie : le français, impérativement. Tu t'adresses à un francophone qui apprend le vietnamien. Après la flèche, tout est rédigé en français : ce qui ne va pas dans la phrase, pourquoi, et la formulation correcte attendue. Le vietnamien n'y apparaît que pour citer un mot ou une tournure, toujours entre guillemets et suivi de sa traduction française. Une explication rédigée en vietnamien serait inutilisable : n'en écris aucune.",
+    "",
+    "TROISIÈME PARTIE, après une ligne contenant exactement " + SEPARATEUR_TRAD + " : la traduction française du texte ponctué de la première partie. Une traduction fidèle et naturelle, en français courant, qui suit le même découpage en phrases et en paragraphes. Rien d'autre : ni commentaire, ni note, ni rappel du texte vietnamien.",
     "",
     "Exemple de réponse complète :",
     "Tôi đi học rồi. Bạn có khỏe không?",
     SEPARATEUR,
     "bạn có khỏe không → le pronom « bạn » est neutre et sonne scolaire ici ; en s'adressant à un homme un peu plus âgé, un natif dirait plutôt « anh có khỏe không » (« comment allez-vous ? »).",
+    SEPARATEUR_TRAD,
+    "Je suis déjà parti à l'école. Comment vas-tu ?",
     "",
     "Texte :",
     texte
@@ -1678,7 +1718,7 @@ function appliquer(brut){
   const suppressions = items.filter(i => i.type === 'suppr');
 
   if (!ajouts.length && !suppressions.length && texteSansMarques(items) === reference){
-    afficherResume([], parties.remarques, parties.presente);
+    afficherResume([], parties.remarques, parties.presente, parties.traduction);
     message("Aucune différence : " + nomIA() + " n'a rien corrigé." +
             (parties.remarques.length
               ? ' ' + parties.remarques.length + (parties.remarques.length > 1 ? ' tournures signalées' : ' tournure signalée') + ' plus bas.'
@@ -1696,7 +1736,7 @@ function appliquer(brut){
   suppressions.forEach(i => changements.push({ genre:'suppr', avant:i.v, apres:null }));
 
   afficherResultat(items, marques);
-  afficherResume(changements, parties.remarques, parties.presente);
+  afficherResume(changements, parties.remarques, parties.presente, parties.traduction);
   if (changements.length) allumerOk();
   majCompteur();
   sauver();
