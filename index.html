@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sửa lỗi — correcteur de frappe vietnamien</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap">
 <style>
   :root{
     --papier:#EFF1EC;
@@ -19,7 +22,10 @@
     --bleu:#1B4F82;
     --trait:#D5DAD4;
     --rayon:10px;
-    --serif: "Charter","Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
+    /* Noto Serif dessine les lettres vietnamiennes en un seul glyphe : le crochet
+       de ư et ơ est attaché à la lettre, jamais posé à côté comme un accent.
+       En secours, Times New Roman, également complet en vietnamien. */
+    --serif: "Noto Serif","Times New Roman","Liberation Serif",serif;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
   *{box-sizing:border-box}
@@ -289,7 +295,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V26</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V27</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -658,8 +664,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V26';
+const VERSION = 'V27';
 const HISTORIQUE = [
+  { v:'V27', d:'sept. 2026', t:"Changement de police pour le vietnamien : Noto Serif remplace Charter, qui ne possédait pas les lettres à crochet et laissait le navigateur composer ư et ơ en deux morceaux — le crochet finissait détaché, au risque d'être pris pour un accent. Times New Roman sert de secours si la police ne peut pas être chargée." },
   { v:'V26', d:'sept. 2026', t:"Les deux fenêtres de lecture reçoivent une hauteur ferme et non un simple plafond, si bien qu'elles remplissent réellement l'écran. Le partage se mesure à l'intérieur de la carte plutôt que par rapport au défilement, donc il ne dépend plus du moment où il est calculé. Enfin, aucune des deux boîtes ne s'étire au-delà de son contenu, et le texte rend aux explications la place qu'il n'utilise pas." },
   { v:'V25', d:'sept. 2026', t:"En lecture du vocabulaire, les deux fenêtres se partagent maintenant la hauteur réellement disponible, mesurée à l'écran : environ 62 % pour le texte, le reste pour les explications, avec un plancher confortable en bas. Sur grand écran la fenêtre du bas garde sa hauteur et montre plusieurs définitions, celle qui est visée y étant simplement amenée ; sur petit écran elle continue de se réduire à l'explication visée. Le partage est recalculé au redimensionnement de la fenêtre." },
   { v:'V24', d:'sept. 2026', t:"Cinquième bouton : une requête de vocabulaire qui marque tous les mots du texte, à la seule exception des quelques mots élémentaires qu'un débutant connaît après deux mois d'apprentissage. Même fonctionnement que les deux autres requêtes de vocabulaire." },
