@@ -112,6 +112,10 @@
   button.reussi,button.reussi:hover{
     background:var(--vif);border-color:#00A844;color:#06210F;font-weight:700;
   }
+  /* Attente d'un second clic sur OK, en lecture */
+  button.confirme,button.confirme:hover{
+    background:var(--ambre);border-color:var(--ambre);color:#FFFFFF;font-weight:700;
+  }
   button.echec,button.echec:hover{
     background:#E53935;border-color:#C62828;color:#FFFFFF;font-weight:700;
   }
@@ -305,7 +309,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V29</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V30</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -498,7 +502,9 @@
         la liste s'effacent le temps de la lecture —, et se partagent la hauteur de l'écran — sur un grand
         écran la fenêtre du bas garde de quoi montrer plusieurs définitions, sur un petit elle se réduit
         à celle qui est visée ; le texte n'est pas modifiable, si bien que le clavier
-        ne s'ouvre pas sur un mot cliqué. Le bandeau « OK » rend au texte sa couleur et ses boutons.
+        ne s'ouvre pas sur un mot cliqué. Le bandeau « OK » rend au texte sa couleur et ses boutons, après confirmation :
+        le premier clic le fait passer à l'orange pendant cinq secondes, le second exécute — un clic isolé
+        reste donc sans effet.
         Tout ce qui est à l'écran — modifications, remarques, traduction, vocabulaire, mode lecture — est
         rangé avec le texte auquel il se rapporte : fermer la page et la rouvrir la retrouve dans l'état
         où elle était, et chaque texte garde son propre affichage. Rien de tout cela ne part sur GitHub. La section « Changer de texte » permet de tenir plusieurs
@@ -675,8 +681,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V29';
+const VERSION = 'V30';
 const HISTORIQUE = [
+  { v:'V30', d:'sept. 2026', t:"Le bandeau « OK — revenir au texte » demande confirmation : le premier clic le fait passer à l'orange en affichant « Confirmer : revenir au texte ? » pendant cinq secondes, et seul un second clic quitte la lecture. Passé ce délai, ou après un clic ailleurs dans la page, le premier clic est oublié. Hors lecture, le bouton OK agit toujours immédiatement." },
   { v:'V29', d:'sept. 2026', t:"En lecture, l'en-tête se fait discret à son tour : la phrase d'explication sous le titre disparaît et le titre lui-même se réduit, ce qui rend une bonne partie de la hauteur aux deux fenêtres sur un écran de téléphone." },
   { v:'V28', d:'sept. 2026', t:"Pendant la lecture du vocabulaire, la ligne du nom et du compteur, la ligne d'état et le titre de la liste s'effacent : les deux fenêtres de texte ne sont plus séparées que par le bandeau OK, et récupèrent la place ainsi libérée. Tout revient au sortir de la lecture." },
   { v:'V27', d:'sept. 2026', t:"Changement de police pour le vietnamien : Noto Serif remplace Charter, qui ne possédait pas les lettres à crochet et laissait le navigateur composer ư et ơ en deux morceaux — le crochet finissait détaché, au risque d'être pris pour un accent. Times New Roman sert de secours si la police ne peut pas être chargée." },
@@ -928,14 +935,34 @@ function allumerOk(){
 function eteindreOk(){ btnOk.classList.remove('attente'); }
 
 document.addEventListener('click', (e) => {
-  if (e.target !== btnOk && !btnOk.contains(e.target)) eteindreOk();
+  if (e.target !== btnOk && !btnOk.contains(e.target)){ eteindreOk(); if (attenteOk) annulerConfirmationOk(); }
   const dedans = e.target && e.target.closest &&
                  (e.target.closest('#editeur .dur') || e.target.closest('#motsListe li'));
   if (!dedans) effacerVise();
 });
 
+/* En lecture, OK demande confirmation : un premier clic arme le bouton pendant
+   cinq secondes, un second exécute. Sans second clic, le premier est oublié. */
+let attenteOk = null;
+
+function annulerConfirmationOk(){
+  clearTimeout(attenteOk);
+  attenteOk = null;
+  btnOk.classList.remove('confirme');
+  btnOk.textContent = editeur.classList.contains('lecture') ? 'OK — revenir au texte' : 'OK';
+}
+
 btnOk.addEventListener('click', () => {
   eteindreOk();
+  if (editeur.classList.contains('lecture')){
+    if (!attenteOk){
+      btnOk.classList.add('confirme');
+      btnOk.textContent = 'Confirmer : revenir au texte ?';
+      attenteOk = setTimeout(annulerConfirmationOk, 5000);
+      return;
+    }
+    annulerConfirmationOk();
+  }
   accepterCorrections(true);
 });
 
@@ -2003,6 +2030,9 @@ function quitterModeMots(){
   document.body.classList.remove('lecture');
   editeur.setAttribute('contenteditable', 'true');
   document.getElementById('boutonsPrincipaux').classList.remove('lecture');
+  clearTimeout(attenteOk);
+  attenteOk = null;
+  btnOk.classList.remove('confirme');
   btnOk.textContent = 'OK';
   liste.classList.remove('compact');
   liste.style.maxHeight = '';
