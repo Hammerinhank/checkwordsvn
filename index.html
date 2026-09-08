@@ -297,6 +297,23 @@
 
   .aide{font-size:.88rem;color:var(--encre-douce);margin:18px 0 0;max-width:62ch}
 
+  /* Fenêtre de vérification : elle s'ouvre avant que l'éditeur ne soit touché,
+     quand le contenu collé ne ressemble pas à une correction du texte. */
+  #dlgVerif .modal-tete h2{color:var(--laque)}
+  .verif-resume{margin:0 0 16px;font-size:.95rem;line-height:1.55}
+  .verif-bloc{margin-bottom:12px}
+  .verif-bloc h3{
+    font-family:var(--sans);font-size:.76rem;font-weight:700;
+    color:var(--encre-douce);margin:0 0 5px;
+    text-transform:uppercase;letter-spacing:.06em;
+  }
+  .verif-extrait{
+    font-family:var(--serif);font-size:1.02rem;line-height:1.5;margin:0;
+    background:#F4F6F3;border:1px solid var(--trait);border-radius:6px;
+    padding:8px 10px;word-wrap:break-word;
+  }
+  .verif-extrait.vide{font-family:var(--sans);font-size:.9rem;color:var(--encre-douce);font-style:italic}
+
   @media (max-width:520px){
     #editeur{font-size:1.1rem}
     .boutons button{flex:1 1 auto}
@@ -310,7 +327,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V31</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V32</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -510,7 +527,12 @@
         reste donc sans effet.
         Tout ce qui est à l'écran — modifications, remarques, traduction, vocabulaire, mode lecture — est
         rangé avec le texte auquel il se rapporte : fermer la page et la rouvrir la retrouve dans l'état
-        où elle était, et chaque texte garde son propre affichage. Rien de tout cela ne part sur GitHub. La section « Changer de texte » permet de tenir plusieurs
+        où elle était, et chaque texte garde son propre affichage. Rien de tout cela ne part sur GitHub.
+        Avant d'écrire quoi que ce soit dans l'éditeur, la page vérifie que le contenu collé est bien
+        une réponse à ton texte : elle compte les mots qu'ils ont en commun. Si la part est trop
+        faible — presse-papier contenant autre chose, réponse à un autre texte —, l'éditeur n'est pas
+        touché et une fenêtre te montre les deux débuts de texte avant de te laisser trancher.
+        Dans le même esprit, « Tout effacer » ne s'exécute qu'au second clic. La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -650,6 +672,28 @@
   </div>
 </dialog>
 
+<dialog id="dlgVerif">
+  <div class="modal-tete">
+    <h2 id="titreVerif">Vérification</h2>
+    <button class="fermer" data-fermer aria-label="Fermer">✕</button>
+  </div>
+  <div class="modal-corps">
+    <p class="verif-resume" id="verifResume"></p>
+    <div class="verif-bloc">
+      <h3>Ton texte</h3>
+      <p class="verif-extrait" lang="vi" id="verifTien"></p>
+    </div>
+    <div class="verif-bloc" style="margin-bottom:0">
+      <h3 id="verifTitreColle">Ce qui a été collé</h3>
+      <p class="verif-extrait" lang="vi" id="verifColle"></p>
+    </div>
+  </div>
+  <div class="modal-pied">
+    <button id="btnVerifAnnuler" data-fermer>Annuler</button>
+    <button id="btnVerifForcer">Appliquer quand même</button>
+  </div>
+</dialog>
+
 <dialog id="dlgNom">
   <div class="modal-tete">
     <h2 id="titreNom">Nom du texte</h2>
@@ -684,8 +728,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V31';
+const VERSION = 'V32';
 const HISTORIQUE = [
+  { v:'V32', d:'sept. 2026', t:"Garde-fou avant toute écriture dans l'éditeur : la part de mots que le contenu collé a en commun avec le texte est mesurée avant que quoi que ce soit ne soit modifié. Au-delà de 70 % de mots communs, l'application est immédiate comme auparavant. En dessous, l'éditeur n'est pas touché : une fenêtre annonce combien de mots seraient remplacés, montre le début de l'un et de l'autre, et laisse le choix d'appliquer ou d'annuler. Sous 25 %, le contenu est déclaré étranger au texte et c'est l'annulation qui est mise en avant. Même principe pour le vocabulaire : si aucun mot de la liste ne se trouve dans le texte, rien n'est modifié. Enfin, « Tout effacer » demande confirmation en deux clics, sur le modèle du bandeau OK." },
   { v:'V31', d:'sept. 2026', t:"Un mot coloré grossit quand on clique dessus, et d'un cran de plus à chaque nouveau clic sur le même mot, jusqu'au double de sa taille. Il retrouve sa taille normale dès qu'on clique ailleurs, en même temps qu'il perd son gras." },
   { v:'V30', d:'sept. 2026', t:"Le bandeau « OK — revenir au texte » demande confirmation : le premier clic le fait passer à l'orange en affichant « Confirmer : revenir au texte ? » pendant cinq secondes, et seul un second clic quitte la lecture. Passé ce délai, ou après un clic ailleurs dans la page, le premier clic est oublié. Hors lecture, le bouton OK agit toujours immédiatement." },
   { v:'V29', d:'sept. 2026', t:"En lecture, l'en-tête se fait discret à son tour : la phrase d'explication sous le titre disparaît et le titre lui-même se réduit, ce qui rend une bonne partie de la hauteur aux deux fenêtres sur un écran de téléphone." },
@@ -737,6 +782,7 @@ const resumeTitre = document.getElementById('resumeTitre');
 const btnAppliquer= document.getElementById('btnAppliquer');
 const btnEnvoyer  = document.getElementById('btnEnvoyer');
 const btnOk       = document.getElementById('btnOk');
+const btnVider    = document.getElementById('btnVider');
 const btnGhEnvoyer= document.getElementById('btnGhEnvoyer');
 const sousTitre   = document.getElementById('sousTitre');
 const champCle    = document.getElementById('cleApi');
@@ -940,6 +986,7 @@ function eteindreOk(){ btnOk.classList.remove('attente'); }
 
 document.addEventListener('click', (e) => {
   if (e.target !== btnOk && !btnOk.contains(e.target)){ eteindreOk(); if (attenteOk) annulerConfirmationOk(); }
+  if (attenteVider && e.target !== btnVider && !btnVider.contains(e.target)) annulerConfirmationVider();
   const dedans = e.target && e.target.closest &&
                  (e.target.closest('#editeur .dur') || e.target.closest('#motsListe li'));
   if (!dedans) effacerVise();
@@ -1040,9 +1087,9 @@ function comparer(avant, apres){
     }
   }
   const ops = [];
-  let i=0, j=0;
+  let i=0, j=0, communs=0;
   while (i<n && j<m){
-    if (avant[i] === apres[j]) { ops.push({op:'=', a:avant[i], b:apres[j], j}); i++; j++; }
+    if (avant[i] === apres[j]) { ops.push({op:'=', a:avant[i], b:apres[j], j}); communs++; i++; j++; }
     else if (dp[i+1][j] >= dp[i][j+1]) { ops.push({op:'-', a:avant[i]}); i++; }
     else { ops.push({op:'+', b:apres[j], j}); j++; }
   }
@@ -1071,7 +1118,7 @@ function comparer(avant, apres){
       changements.push({ avant:null, apres: ops[k].b });
     }
   }
-  return { marques, changements };
+  return { marques, changements, communs };
 }
 
 /* Analyse des marques [-mot] (suppression proposée) et [+mot] (ajout proposé). */
@@ -2091,6 +2138,14 @@ function appliquerVocabulaire(brut){
   const conforme = aplatir(marque.replace(/\{\{|\}\}/g, '')) === aplatir(reference);
   const surligne = surlignerMots(reference, mots);
 
+  /* Garde-fou : si pas un seul mot de la liste ne se trouve dans le texte,
+     c'est que le contenu collé se rapporte à autre chose. On n'écrit rien. */
+  if (!surligne.zones){
+    message("Aucun des " + mots.length + " mots de cette liste ne se trouve dans ton texte : " +
+            "le contenu collé se rapporte visiblement à un autre texte. Rien n'a été modifié.", true);
+    return;
+  }
+
   htmlAvantCorrection = editeur.innerHTML;
   editeur.innerHTML = surligne.html;
   sauver();
@@ -2181,6 +2236,88 @@ document.getElementById('motsListe').addEventListener('click', (e) => {
   centrerMot(marques[rang]);
 });
 
+/* ---------- garde-fou avant d'écrire dans l'éditeur ----------
+   Le presse-papier ne contient pas toujours ce qu'on croit : la réponse à un
+   autre texte, la requête au lieu de la réponse, ou n'importe quoi copié
+   entre-temps. Avant de remplacer le texte, on mesure la part de mots que le
+   contenu collé a en commun avec le texte de référence : une correction de
+   frappe en conserve la quasi-totalité, un contenu étranger n'en garde
+   presque aucun. Rien n'est écrit tant que ce taux n'est pas jugé.        */
+const SEUIL_SUR = 0.70;   /* au-dessus : application directe, sans rien demander */
+const SEUIL_BAS = 0.25;   /* au-dessous : le contenu est manifestement étranger */
+
+function tauxCommun(communs, avant, apres){
+  const base = Math.max(avant.length, apres.length);
+  return base ? communs / base : 1;
+}
+
+/* Squelette d'un mot : ses lettres, sans accent ni ton, đ ramené à d.
+   Un texte tapé sans diacritiques et rendu accentué par l'IA ne partage
+   aucun mot au sens strict, alors que c'est la correction la plus normale
+   qui soit : le recouvrement se mesure donc sur ce squelette.            */
+function squelette(mot){
+  return (mot || '').normalize('NFD').replace(/\p{M}+/gu, '')
+                    .replace(/[đĐ]/g, 'd').toLowerCase();
+}
+
+/* Début d'un texte, sur une seule ligne, pour l'identifier d'un coup d'œil. */
+function extraitCourt(t, n){
+  const s = (t || '').replace(/\s+/g, ' ').trim();
+  return s.length > n ? s.slice(0, n).trim() + '…' : s;
+}
+
+let verifEnAttente = null;   /* correction calculée, en attente d'un feu vert */
+
+function demanderVerification(ctx){
+  verifEnAttente = ctx;
+  const etranger  = ctx.taux < SEUIL_BAS;
+  const remplaces = Math.max(0, ctx.avant.length - ctx.compar.communs);
+  const pourcent  = Math.round(ctx.taux * 100);
+
+  document.getElementById('titreVerif').textContent = etranger
+    ? "Ce contenu ne correspond pas à ton texte"
+    : "Ce contenu ne ressemble pas à une correction";
+
+  document.getElementById('verifResume').textContent = etranger
+    ? "Sur les " + ctx.avant.length + " mots de ton texte, " + ctx.compar.communs +
+      (ctx.compar.communs > 1 ? " seulement se retrouvent" : " seulement se retrouve") +
+      " dans ce qui vient d'être collé. Ce n'est visiblement pas une réponse à ce texte : " +
+      "le presse-papier contient probablement tout autre chose. Rien n'a été modifié."
+    : remplaces + (remplaces > 1 ? " mots" : " mot") + " sur les " + ctx.avant.length +
+      " de ton texte seraient remplacés, soit " + pourcent + " % de mots en commun seulement. " +
+      "Une correction de frappe n'en change normalement que quelques-uns. Vérifie que le " +
+      "presse-papier contient bien la réponse à ce texte-ci.";
+
+  const tien  = document.getElementById('verifTien');
+  const colle = document.getElementById('verifColle');
+  tien.textContent  = extraitCourt(ctx.reference, 220);
+  colle.textContent = extraitCourt(ctx.reponse, 220) || '(rien)';
+  colle.classList.toggle('vide', !extraitCourt(ctx.reponse, 220));
+
+  /* Quand le contenu est manifestement étranger, c'est l'annulation qui est
+     mise en avant : appliquer reste possible, mais n'est plus proposé. */
+  const forcer  = document.getElementById('btnVerifForcer');
+  const annuler = document.getElementById('btnVerifAnnuler');
+  forcer.className  = etranger ? 'discret' : 'principal';
+  annuler.className = etranger ? 'principal' : '';
+
+  document.getElementById('dlgVerif').showModal();
+}
+
+document.getElementById('btnVerifForcer').addEventListener('click', () => {
+  const ctx = verifEnAttente;
+  verifEnAttente = null;
+  document.getElementById('dlgVerif').close();
+  if (ctx) poserCorrection(ctx);
+});
+
+/* Fermeture sans avoir forcé — bouton Annuler, croix ou touche Échap. */
+document.getElementById('dlgVerif').addEventListener('close', () => {
+  if (!verifEnAttente) return;
+  verifEnAttente = null;
+  message("Contenu écarté : ton texte n'a pas été modifié.");
+});
+
 function appliquer(brut){
   if (RE_MOTS.test(brut || '')){ appliquerVocabulaire(brut); return; }
   const parties = decouperReponse(brut);
@@ -2203,11 +2340,33 @@ function appliquer(brut){
     return;
   }
 
-  htmlAvantCorrection = editeur.innerHTML;
-  const avant = mots(reference);
-  const apres = motsComparaison(items);
-  const { marques, changements } = comparer(avant, apres);
+  /* Tout le diagnostic est fait ici, avant la moindre écriture dans l'éditeur. */
+  const avant  = mots(reference);
+  const apres  = motsComparaison(items);
+  const compar = comparer(avant, apres);
+  let taux     = tauxCommun(compar.communs, avant, apres);
+
+  /* Seconde mesure, plus indulgente, seulement si la première est basse :
+     elle rattrape les corrections qui rétablissent tous les diacritiques. */
+  if (taux < SEUIL_SUR){
+    const nu = comparer(avant.map(squelette), apres.map(squelette));
+    taux = Math.max(taux, tauxCommun(nu.communs, avant, apres));
+  }
+
+  const ctx = { items, ajouts, suppressions, parties, reference, reponse, avant, apres, compar, taux };
+
+  if (taux >= SEUIL_SUR){ poserCorrection(ctx); return; }
+  demanderVerification(ctx);
+}
+
+/* Écriture effective de la correction dans l'éditeur. */
+function poserCorrection(ctx){
+  const { items, ajouts, suppressions, parties, avant, apres, compar } = ctx;
+  const marques = compar.marques;
+  const changements = compar.changements.slice();
   changements.forEach(c => { if (!c.genre) c.genre = 'corr'; });
+
+  htmlAvantCorrection = editeur.innerHTML;
 
   ajouts.forEach(i => changements.push({ genre:'ajout', avant:null, apres:i.v }));
   suppressions.forEach(i => changements.push({ genre:'suppr', avant:i.v, apres:null }));
@@ -2280,7 +2439,29 @@ document.getElementById('btnRevenir').addEventListener('click', () => {
   message("Texte envoyé restauré.");
 });
 
-document.getElementById('btnVider').addEventListener('click', () => {
+/* « Tout effacer » est la seule action de la page qui détruise le texte sans
+   qu'il en reste trace : elle demande donc confirmation, comme le bandeau OK.
+   Un premier clic arme le bouton pendant cinq secondes, un second exécute. */
+let attenteVider = null;
+
+function annulerConfirmationVider(){
+  clearTimeout(attenteVider);
+  attenteVider = null;
+  btnVider.classList.remove('confirme');
+  btnVider.classList.add('discret');
+  btnVider.textContent = 'Tout effacer';
+}
+
+btnVider.addEventListener('click', () => {
+  if (!attenteVider){
+    if (!texteEditeur()){ message("L'éditeur est déjà vide."); return; }
+    btnVider.classList.remove('discret');
+    btnVider.classList.add('confirme');
+    btnVider.textContent = 'Confirmer : tout effacer ?';
+    attenteVider = setTimeout(annulerConfirmationVider, 5000);
+    return;
+  }
+  annulerConfirmationVider();
   editeur.innerHTML = '';
   resume.style.display = 'none';
   htmlAvantCorrection = null;
