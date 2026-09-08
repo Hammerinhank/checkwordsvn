@@ -169,6 +169,7 @@
     border-radius:3px;padding:0 2px;cursor:pointer;
   }
   #editeur .dur.vise{background:#BFDCF3;font-weight:700}
+  #editeur .dur{transition:font-size .12s ease-out}
   /* Lecture du vocabulaire : le texte devient une fenêtre qui défile toute seule,
      l'explication choisie occupe juste la hauteur qu'il lui faut. */
   #editeur.lecture{position:relative;max-height:52vh;overflow-y:auto;scroll-behavior:smooth}
@@ -309,7 +310,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V30</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V31</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -495,7 +496,9 @@
         s'affiche sous les tournures à revoir. Les trois requêtes de vocabulaire, elles, ne corrigent rien :
         elles colorent en bleu les mots qu'un niveau A2 — ou A1, ou, pour un débutant de deux mois, tous
         les mots hormis les tout premiers appris — ne connaît probablement pas, et chaque clic sur un mot
-        coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras — et inversement, cliquer
+        coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras, et le grossit ; recliquer
+        dessus le grossit encore, jusqu'au double de sa taille, et il revient à la normale au premier clic
+        ailleurs — et inversement, cliquer
         une explication centre le mot dans le texte, un nouveau clic allant à son occurrence suivante.
         Pendant cette lecture, le texte et les explications forment deux fenêtres qui défilent chacune de
         leur côté, séparées par le seul bandeau « OK » — nom du texte, compteur, ligne d'état et titre de
@@ -681,8 +684,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V30';
+const VERSION = 'V31';
 const HISTORIQUE = [
+  { v:'V31', d:'sept. 2026', t:"Un mot coloré grossit quand on clique dessus, et d'un cran de plus à chaque nouveau clic sur le même mot, jusqu'au double de sa taille. Il retrouve sa taille normale dès qu'on clique ailleurs, en même temps qu'il perd son gras." },
   { v:'V30', d:'sept. 2026', t:"Le bandeau « OK — revenir au texte » demande confirmation : le premier clic le fait passer à l'orange en affichant « Confirmer : revenir au texte ? » pendant cinq secondes, et seul un second clic quitte la lecture. Passé ce délai, ou après un clic ailleurs dans la page, le premier clic est oublié. Hors lecture, le bouton OK agit toujours immédiatement." },
   { v:'V29', d:'sept. 2026', t:"En lecture, l'en-tête se fait discret à son tour : la phrase d'explication sous le titre disparaît et le titre lui-même se réduit, ce qui rend une bonne partie de la hauteur aux deux fenêtres sur un écran de téléphone." },
   { v:'V28', d:'sept. 2026', t:"Pendant la lecture du vocabulaire, la ligne du nom et du compteur, la ligne d'état et le titre de la liste s'effacent : les deux fenêtres de texte ne sont plus séparées que par le bandeau OK, et récupèrent la place ainsi libérée. Tout revient au sortir de la lecture." },
@@ -2105,8 +2109,14 @@ function appliquerVocabulaire(brut){
 /* Va-et-vient entre le texte et les explications. */
 let occurrences = {};      /* prochaine occurrence à montrer, par mot */
 
+let grossissement = 0;      /* nombre de clics successifs sur le même mot */
+
 function effacerVise(){
-  document.querySelectorAll('#motsListe li.vise, #editeur .dur.vise').forEach(n => n.classList.remove('vise'));
+  document.querySelectorAll('#motsListe li.vise, #editeur .dur.vise').forEach(n => {
+    n.classList.remove('vise');
+    n.style.removeProperty('font-size');
+  });
+  grossissement = 0;
 }
 
 /* L'explication choisie remplit la fenêtre du bas, sans plus : sa hauteur est
@@ -2142,8 +2152,12 @@ function centrerMot(span){
 editeur.addEventListener('click', (e) => {
   const cible = e.target && e.target.closest ? e.target.closest('.dur') : null;
   if (!cible) return;
+  /* Reclic sur le même mot : il grossit d'un cran de plus, jusqu'au double. */
+  const rang = cible.classList.contains('vise') ? grossissement : 0;
   effacerVise();
+  grossissement = Math.min(rang + 1, 5);
   cible.classList.add('vise');
+  cible.style.fontSize = (1.15 + 0.2 * (grossissement - 1)).toFixed(2) + 'em';
   const li = document.getElementById('mot-' + cible.dataset.i);
   if (!li) return;
   li.classList.add('vise');
