@@ -289,7 +289,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V21</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V22</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -476,7 +476,10 @@
         une explication centre le mot dans le texte, un nouveau clic allant à son occurrence suivante.
         Pendant cette lecture, le texte et les explications forment deux fenêtres qui défilent chacune de
         leur côté, séparées par le bandeau « OK » ; le texte n'est pas modifiable, si bien que le clavier
-        ne s'ouvre pas sur un mot cliqué. Le bandeau « OK » rend au texte sa couleur et ses boutons. La section « Changer de texte » permet de tenir plusieurs
+        ne s'ouvre pas sur un mot cliqué. Le bandeau « OK » rend au texte sa couleur et ses boutons.
+        Tout ce qui est à l'écran — modifications, remarques, traduction, vocabulaire, mode lecture — est
+        rangé avec le texte auquel il se rapporte : fermer la page et la rouvrir la retrouve dans l'état
+        où elle était, et chaque texte garde son propre affichage. Rien de tout cela ne part sur GitHub. La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -650,8 +653,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V21';
+const VERSION = 'V22';
 const HISTORIQUE = [
+  { v:'V22', d:'sept. 2026', t:"L'affichage courant est conservé d'une session à l'autre : la fenêtre des modifications, les remarques, la traduction, la liste de vocabulaire, le mode lecture et le retour en arrière sont rangés avec le texte auquel ils se rapportent. Rouvrir la page retrouve l'écran tel qu'il était, et chaque texte garde son propre affichage. L'envoi vers GitHub, lui, ne porte toujours que sur le texte." },
   { v:'V21', d:'sept. 2026', t:"Pendant la lecture du vocabulaire, le texte n'est plus modifiable : sur iPhone, cliquer un mot n'ouvre plus le clavier. Les deux autres boutons s'effacent et « OK » devient un bandeau pleine largeur, un peu moins haut, qui sépare la fenêtre de texte de celle des explications. Le clic sur ce bandeau rend tout à la normale." },
   { v:'V20', d:'sept. 2026', t:"Lecture du vocabulaire repensée pour les petits écrans : le texte devient une fenêtre qui défile seule et garde l'essentiel de la hauteur, tandis que la fenêtre du bas se réduit à la hauteur de l'explication choisie. Un clic sur un mot coloré affiche son explication et met le mot en gras ; un clic sur une explication centre le mot verticalement dans le texte, les clics suivants passant aux occurrences suivantes. Toutes les occurrences d'un mot sont désormais colorées, et le gras tombe au premier clic ailleurs." },
   { v:'V19', d:'sept. 2026', t:"Troisième requête dans « Envoyer la requête à la main » : le vocabulaire. L'IA renvoie le texte inchangé, les mots difficiles pour un niveau A2 entourés d'accolades, et leur explication en français. La page colore ces mots en bleu dans l'éditeur ; un clic sur l'un d'eux fait défiler la fenêtre du bas jusqu'à son explication et la met en gras. Si le texte renvoyé s'écarte de l'original, le texte d'origine est conservé et les mots y sont retrouvés par recherche." },
@@ -1105,10 +1109,14 @@ function afficherResume(changements, remarques, presente, traduction){
   const avecTraduction  = afficherTraduction(traduction || '');
   const blocCorr = document.getElementById('blocCorrections');
   blocCorr.hidden = !changements.length;
-  if (!changements.length && !avecRemarques && !avecTraduction){ resume.style.display='none'; return; }
+  if (!changements.length && !avecRemarques && !avecTraduction){ resume.style.display='none'; sauverVue(); return; }
   resume.style.display = 'block';
-  if (!changements.length) return;
+  if (!changements.length){ sauverVue(); return; }
   resumeTitre.textContent = changements.length === 1 ? '1 modification' : changements.length + ' modifications';
+  majResumeListe(changements);
+}
+
+function majResumeListe(changements){
   resumeListe.innerHTML = changements.map(c => {
     if (c.genre === 'ajout')
       return '<li>à ajouter &nbsp;·&nbsp; <span class="apres">' + echapper(c.apres) + '</span></li>';
@@ -1118,6 +1126,7 @@ function afficherResume(changements, remarques, presente, traduction){
     const b = c.apres ? '<span class="apres">' + echapper(c.apres) + '</span>' : '<span class="avant">supprimé</span>';
     return '<li>' + a + ' &nbsp;·&nbsp; ' + b + '</li>';
   }).join('');
+  sauverVue();
 }
 
 function majCompteur(){
@@ -1238,6 +1247,51 @@ function majListeTextes(){
     echapper(n) + (estModifie(docs.docs[n]) ? ' — modifié' : '') + '</option>').join('');
 }
 
+/* ---------- l'affichage courant survit à un rechargement ----------
+   Ce qui est à l'écran (fenêtre des modifications, remarques, traduction,
+   vocabulaire, mode lecture) est rangé avec le texte auquel il se rapporte.
+   Rien de tout cela ne part sur GitHub : l'envoi ne porte que sur le texte. */
+
+function elt(id){ return document.getElementById(id); }
+
+function etatVue(){
+  return {
+    aff:  resume.style.display === 'block',
+    corr: { cache: elt('blocCorrections').hidden, titre: resumeTitre.textContent, html: resumeListe.innerHTML },
+    rem:  { cache: elt('blocRemarques').hidden,   titre: elt('remarquesTitre').textContent, html: elt('remarquesListe').innerHTML },
+    trad: { cache: elt('blocTraduction').hidden,  html: elt('traductionTexte').innerHTML },
+    mots: { cache: elt('blocMots').hidden,        titre: elt('motsTitre').textContent, html: elt('motsListe').innerHTML },
+    lecture: editeur.classList.contains('lecture'),
+    avant: htmlAvantCorrection
+  };
+}
+
+function sauverVue(){
+  const d = docCourant();
+  if (!d) return;
+  d.vue = etatVue();
+  docsEnregistrer();
+}
+
+function restaurerVue(vue){
+  quitterModeMots();
+  htmlAvantCorrection = (vue && typeof vue.avant === 'string') ? vue.avant : null;
+  if (!vue || !vue.aff){ resume.style.display = 'none'; return; }
+  elt('blocCorrections').hidden = vue.corr.cache;
+  resumeTitre.textContent = vue.corr.titre;
+  resumeListe.innerHTML   = vue.corr.html;
+  elt('blocRemarques').hidden = vue.rem.cache;
+  elt('remarquesTitre').textContent = vue.rem.titre;
+  elt('remarquesListe').innerHTML   = vue.rem.html;
+  elt('blocTraduction').hidden = vue.trad.cache;
+  elt('traductionTexte').innerHTML = vue.trad.html;
+  elt('blocMots').hidden = vue.mots.cache;
+  elt('motsTitre').textContent = vue.mots.titre;
+  elt('motsListe').innerHTML   = vue.mots.html;
+  resume.style.display = 'block';
+  if (vue.lecture) entrerModeMots();
+}
+
 function messageTextes(txt, type=''){
   const e = document.getElementById('etatTextes');
   e.textContent = txt;
@@ -1250,9 +1304,8 @@ function afficherDoc(nom, msg){
   if (!d) return;
   docs.courant = nom;
   texteEnvoye = d.envoye || '';
-  htmlAvantCorrection = null;
   editeur.innerHTML = d.texte || '';
-  resume.style.display = 'none';
+  restaurerVue(d.vue);
   eteindreAttente();
   eteindreOk();
   if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
@@ -1822,6 +1875,19 @@ function surlignerMots(reference, mots){
   return { html: html + texteEnHtml(reference.slice(curseur)), zones: zones.length };
 }
 
+/* Entrée en lecture : deux fenêtres qui défilent, OK en bandeau, texte figé —
+   sur iPhone, cliquer un mot n'ouvre alors pas le clavier. */
+function entrerModeMots(){
+  const liste = document.getElementById('motsListe');
+  editeur.classList.add('lecture');
+  editeur.setAttribute('contenteditable', 'false');
+  document.getElementById('boutonsPrincipaux').classList.add('lecture');
+  btnOk.textContent = 'OK — revenir au texte';
+  liste.classList.add('compact');
+  liste.style.maxHeight = Math.round(window.innerHeight * 0.30) + 'px';
+  occurrences = {};
+}
+
 /* Sortie du mode lecture : le texte et la liste retrouvent leur taille libre. */
 function quitterModeMots(){
   const liste = document.getElementById('motsListe');
@@ -1844,17 +1910,11 @@ function afficherMots(mots){
   if (!mots.length){
     bloc.hidden = true; liste.innerHTML = ''; resume.style.display = 'none';
     quitterModeMots();
+    sauverVue();
     return;
   }
   bloc.hidden = false;
-  editeur.classList.add('lecture');
-  /* Pas de saisie pendant la lecture : sur iPhone, le clavier ne s'ouvre pas. */
-  editeur.setAttribute('contenteditable', 'false');
-  document.getElementById('boutonsPrincipaux').classList.add('lecture');
-  btnOk.textContent = 'OK — revenir au texte';
-  liste.classList.add('compact');
-  liste.style.maxHeight = Math.round(window.innerHeight * 0.30) + 'px';
-  occurrences = {};
+  entrerModeMots();
   document.getElementById('motsTitre').textContent = mots.length === 1
     ? '1 mot à connaître' : mots.length + ' mots à connaître';
   liste.innerHTML = mots.map((m, i) =>
@@ -1862,6 +1922,7 @@ function afficherMots(mots){
     (m.mot ? '<span class="mot" lang="vi">' + echapper(m.mot) + '</span>' : '') +
     '<span class="quoi">' + echapper(m.quoi) + '</span></li>').join('');
   resume.style.display = 'block';
+  sauverVue();
 }
 
 function appliquerVocabulaire(brut){
@@ -2037,6 +2098,7 @@ document.getElementById('btnRevenir').addEventListener('click', () => {
   if (htmlAvantCorrection !== null){
     editeur.innerHTML = htmlAvantCorrection;
     htmlAvantCorrection = null;
+    sauverVue();
   } else if (texteEnvoye){
     editeur.textContent = texteEnvoye;
   } else {
@@ -2350,6 +2412,7 @@ docsCharger();
 const docInitial = docCourant();
 editeur.innerHTML = docInitial.texte || '';
 texteEnvoye = docInitial.envoye || '';
+restaurerVue(docInitial.vue);
 if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
 majFormulaireParams();
 majTextesIA();
