@@ -289,7 +289,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V22</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V23</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -333,11 +333,12 @@
   <details class="section" id="secRequete">
     <summary>Envoyer la requête à la main <span class="note">quand <span class="nom-ia">ChatGPT</span> est déjà ouvert</span></summary>
     <div class="section-corps">
-      <p class="expl">Deux requêtes, deux boutons qui se comportent tous les deux comme le bouton d'envoi principal : ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API. La première est la requête habituelle : correction des fautes de frappe, plus la relecture du naturel. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct. La troisième ne corrige rien : elle repère les mots qu'un étudiant de niveau A2 ne connaît probablement pas et les colore dans le texte ; un clic sur un mot coloré amène son explication sous les yeux, en gras. Le bouton OK, ou « Accepter les corrections », retire la couleur.</p>
+      <p class="expl">Deux requêtes, deux boutons qui se comportent tous les deux comme le bouton d'envoi principal : ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API. La première est la requête habituelle : correction des fautes de frappe, plus la relecture du naturel. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct. Les deux dernières ne corrigent rien : elles repèrent les mots qu'un étudiant ne connaît probablement pas — au niveau A2, ou au niveau A1 pour une liste plus généreuse — et les colorent dans le texte ; un clic sur un mot coloré amène son explication sous les yeux, en gras. Le bouton OK, ou « Accepter les corrections », retire la couleur.</p>
       <div class="boutons" style="margin-top:0">
         <button id="btnCopier">Envoyer la requête de correction</button>
         <button id="btnCopierPonctuation">Envoyer la requête de ponctuation</button>
-        <button id="btnVocabulaire">Envoyer la requête de vocabulaire</button>
+        <button id="btnVocabulaire">Envoyer la requête de vocabulaire A2</button>
+        <button id="btnVocabulaireA1">Envoyer la requête de vocabulaire A1</button>
       </div>
     </div>
   </details>
@@ -470,8 +471,9 @@
         mots, et signale à part celles qui demanderaient davantage pour être du vietnamien correct.
         Les deux boutons de cette section agissent exactement comme le bouton d'envoi principal, chacun
         avec sa requête. La requête de ponctuation demande en outre la traduction française du texte, qui
-        s'affiche sous les tournures à revoir. La requête de vocabulaire, elle, ne corrige rien : elle
-        colore en bleu les mots qu'un niveau A2 ne connaît probablement pas, et chaque clic sur un mot
+        s'affiche sous les tournures à revoir. Les deux requêtes de vocabulaire, elles, ne corrigent rien :
+        elles colorent en bleu les mots qu'un niveau A2 — ou A1, pour une liste plus large — ne connaît
+        probablement pas, et chaque clic sur un mot
         coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras — et inversement, cliquer
         une explication centre le mot dans le texte, un nouveau clic allant à son occurrence suivante.
         Pendant cette lecture, le texte et les explications forment deux fenêtres qui défilent chacune de
@@ -653,8 +655,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V22';
+const VERSION = 'V23';
 const HISTORIQUE = [
+  { v:'V23', d:'sept. 2026', t:"Quatrième bouton dans « Envoyer la requête à la main » : la même requête de vocabulaire, mais pour le niveau A1. Le seuil décrit à l'IA est adapté au niveau demandé, et le reste du fonctionnement — texte inchangé, mots colorés, explications cliquables — est identique." },
   { v:'V22', d:'sept. 2026', t:"L'affichage courant est conservé d'une session à l'autre : la fenêtre des modifications, les remarques, la traduction, la liste de vocabulaire, le mode lecture et le retour en arrière sont rangés avec le texte auquel ils se rapportent. Rouvrir la page retrouve l'écran tel qu'il était, et chaque texte garde son propre affichage. L'envoi vers GitHub, lui, ne porte toujours que sur le texte." },
   { v:'V21', d:'sept. 2026', t:"Pendant la lecture du vocabulaire, le texte n'est plus modifiable : sur iPhone, cliquer un mot n'ouvre plus le clavier. Les deux autres boutons s'effacent et « OK » devient un bandeau pleine largeur, un peu moins haut, qui sépare la fenêtre de texte de celle des explications. Le clic sur ce bandeau rend tout à la normale." },
   { v:'V20', d:'sept. 2026', t:"Lecture du vocabulaire repensée pour les petits écrans : le texte devient une fenêtre qui défile seule et garde l'essentiel de la hauteur, tandis que la fenêtre du bas se réduit à la hauteur de l'explication choisie. Un clic sur un mot coloré affiche son explication et met le mot en gras ; un clic sur une explication centre le mot verticalement dans le texte, les clics suivants passant aux occurrences suivantes. Toutes les occurrences d'un mot sont désormais colorées, et le gras tombe au premier clic ailleurs." },
@@ -1621,11 +1624,15 @@ function construireRequetePonctuation(texte){
 }
 
 /* Troisième requête : repérer le vocabulaire difficile, sans toucher au texte. */
-function construireRequeteVocabulaire(texte){
+function construireRequeteVocabulaire(texte, niveau){
+  niveau = niveau || 'A2';
+  const seuil = niveau === 'A1'
+    ? "vocabulaire au-delà du strict élémentaire (salutations, chiffres, famille, nourriture, temps qu'il fait, verbes et adjectifs les plus fréquents)"
+    : "vocabulaire au-delà des quelques centaines de mots les plus courants";
   return [
-    "Voici un texte en vietnamien lu par un francophone de niveau A2 en vietnamien.",
+    "Voici un texte en vietnamien lu par un francophone de niveau " + niveau + " en vietnamien.",
     "",
-    "Repère tous les mots et expressions qu'un apprenant de ce niveau ne connaît probablement pas : vocabulaire au-delà des quelques centaines de mots les plus courants, mots composés, expressions idiomatiques, termes techniques ou littéraires, et tournures grammaticales inhabituelles à ce niveau. Dans le doute, signale plutôt le mot.",
+    "Repère tous les mots et expressions qu'un apprenant de ce niveau ne connaît probablement pas : " + seuil + ", mots composés, expressions idiomatiques, termes techniques ou littéraires, et tournures grammaticales inhabituelles à ce niveau. Dans le doute, signale plutôt le mot.",
     "",
     "Ta réponse comporte deux parties.",
     "",
@@ -1816,7 +1823,10 @@ document.getElementById('btnCopierPonctuation').addEventListener('click', (e) =>
   envoyerRequete(construireRequetePonctuation, e.currentTarget));
 
 document.getElementById('btnVocabulaire').addEventListener('click', (e) =>
-  envoyerRequete(construireRequeteVocabulaire, e.currentTarget));
+  envoyerRequete((t) => construireRequeteVocabulaire(t, 'A2'), e.currentTarget));
+
+document.getElementById('btnVocabulaireA1').addEventListener('click', (e) =>
+  envoyerRequete((t) => construireRequeteVocabulaire(t, 'A1'), e.currentTarget));
 
 btnAppliquer.addEventListener('click', async () => {
   if (modeBouton === 'accepter'){ accepterCorrections(false); return; }
