@@ -168,7 +168,11 @@
   #blocRemarques{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
   #blocCorrections[hidden] + #blocRemarques{border-top:none;margin-top:0;padding-top:0}
   #remarquesListe{margin:0;padding-left:20px}
-  #remarquesListe li{margin:6px 0;font-size:.95rem}
+  #remarquesListe li{margin:6px 0;font-size:.95rem;cursor:pointer}
+  #remarquesListe li.vise{font-weight:700}
+  #remarquesListe li.rien{cursor:default}
+  /* Phrase visée dans le texte : marquage passager, jamais enregistré. */
+  #editeur span.zone{font-weight:700;background:#F1ECDA;border-radius:3px}
   #remarquesListe .phrase{font-family:var(--serif);font-size:1.02rem;display:block}
   #remarquesListe .quoi{color:var(--encre-douce);display:block}
   #remarquesListe li.rien{list-style:none;margin-left:-20px;color:var(--jade)}
@@ -348,7 +352,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V34</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V35</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -534,7 +538,9 @@
         vers l'IA — le rouge n'est jamais envoyé. La requête demande en outre à l'IA une seconde partie de
         réponse, séparée par une ligne repère : les phrases qui, même sans faute de frappe, seraient
         bancales ou sonneraient étrangement à l'oreille d'un natif. Elles s'affichent sous la liste des
-        modifications, dans « Tournures à revoir », et ne touchent jamais au texte de l'éditeur. La section
+        modifications, dans « Tournures à revoir », et ne touchent jamais au texte de l'éditeur. Un clic sur
+        l'une d'elles met en gras la phrase concernée dans le texte et l'amène au centre de l'écran ; le
+        marquage disparaît au premier clic ailleurs et n'est ni enregistré ni envoyé. La section
         « Envoyer la requête à la main » offre en plus une requête de ponctuation, pour un texte saisi d'un
         seul tenant : l'IA y découpe les phrases, pose la ponctuation et les majuscules sans toucher aux
         mots, et signale à part celles qui demanderaient davantage pour être du vietnamien correct.
@@ -758,8 +764,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V34';
+const VERSION = 'V35';
 const HISTORIQUE = [
+  { v:'V35', d:'sept. 2026', t:"Un clic sur une tournure à revoir met en gras, dans le texte, la phrase qu'elle concerne et la fait défiler au centre de l'écran. La phrase est retrouvée même quand elle traverse des mots corrigés ou signalés, et à défaut de correspondance exacte, ses premiers mots suffisent. Le marquage tombe au premier clic ailleurs et n'est jamais enregistré ni envoyé sur GitHub." },
   { v:'V34', d:'sept. 2026', t:"Les deux boutons d'acceptation disent enfin ce qu'ils font : « Accepter et garder les mots barrés » et « Accepter et retirer les mots barrés ». Quand le texte ne contient aucun mot barré, les deux seraient équivalents : le second est masqué et le premier redevient « Accepter les corrections ». Le vert vif de fin de travail se pose sur celui des deux qui est visible." },
   { v:'V33', d:'sept. 2026', t:"La requête de correction ne se limite plus aux fautes de frappe : l'IA lit d'abord le texte en entier, puis juge chaque phrase dans ce contexte d'ensemble, ce qui lui permet de repérer les mots correctement orthographiés qui ne sont pourtant pas les bons. Deux marques nouvelles, qui ne touchent jamais au texte : [!mot] quand le contexte rend l'erreur certaine — l'IA indique le mot juste —, et [?mot] quand elle hésite et te laisse trancher. Les mots signalés s'affichent en ambre dans l'éditeur, soulignés d'un trait plein pour les premiers, pointillé pour les seconds, et une section « Mots signalés » donne l'explication de chacun. Un clic sur un mot ambre amène son explication, un clic sur une explication ramène au mot. La réponse compte donc trois parties au lieu de deux, et les repères sont reconnus quel que soit leur ordre. Le second bouton d'envoi manuel suit, puisqu'il envoie la même requête." },
   { v:'V32', d:'sept. 2026', t:"Garde-fou avant toute écriture dans l'éditeur : la part de mots que le contenu collé a en commun avec le texte est mesurée avant que quoi que ce soit ne soit modifié. Au-delà de 70 % de mots communs, l'application est immédiate comme auparavant. En dessous, l'éditeur n'est pas touché : une fenêtre annonce combien de mots seraient remplacés, montre le début de l'un et de l'autre, et laisse le choix d'appliquer ou d'annuler. Sous 25 %, le contenu est déclaré étranger au texte et c'est l'annulation qui est mise en avant. Même principe pour le vocabulaire : si aucun mot de la liste ne se trouve dans le texte, rien n'est modifié. Enfin, « Tout effacer » demande confirmation en deux clics, sur le modèle du bandeau OK." },
@@ -1023,8 +1030,9 @@ document.addEventListener('click', (e) => {
   if (e.target !== btnOk && !btnOk.contains(e.target)){ eteindreOk(); if (attenteOk) annulerConfirmationOk(); }
   if (attenteVider && e.target !== btnVider && !btnVider.contains(e.target)) annulerConfirmationVider();
   const dedans = e.target && e.target.closest &&
-                 (e.target.closest('#editeur .dur') || e.target.closest('#motsListe li'));
-  if (!dedans) effacerVise();
+                 (e.target.closest('#editeur .dur') || e.target.closest('#motsListe li') ||
+                  e.target.closest('#remarquesListe li') || e.target.closest('#editeur span.zone'));
+  if (!dedans){ effacerVise(); effacerZone(); }
 });
 
 /* En lecture, OK demande confirmation : un premier clic arme le bouton pendant
@@ -1262,8 +1270,8 @@ function afficherRemarques(remarques, presente){
   titre.textContent = remarques.length === 1
     ? '1 tournure à revoir'
     : remarques.length + ' tournures à revoir';
-  liste.innerHTML = remarques.map(r =>
-    '<li>' +
+  liste.innerHTML = remarques.map((r, i) =>
+    '<li id="rem-' + i + '">' +
     (r.phrase ? '<span class="phrase" lang="vi">' + echapper(r.phrase) + '</span>' : '') +
     '<span class="quoi">' + echapper(r.quoi) + '</span>' +
     '</li>').join('');
@@ -1380,6 +1388,7 @@ function estModifie(d){
 function sauver(){
   const d = docCourant();
   if (!d) return;
+  effacerZone();                                 /* le marquage passager ne s'enregistre pas */
   d.texte  = editeur.innerHTML;
   d.envoye = texteEnvoye;
   d.maj    = new Date().toISOString();
@@ -2460,6 +2469,123 @@ editeur.addEventListener('click', (e) => {
   if (!cible || cible.dataset.d === undefined) return;
   const { li } = viserDoute(cible.dataset.d);
   if (li) li.scrollIntoView({ behavior:'smooth', block:'nearest' });
+});
+
+/* ---------- clic sur une remarque : la phrase visée passe en gras ----------
+   La phrase peut traverser plusieurs nœuds (mots corrigés, mots signalés),
+   elle est donc encadrée morceau par morceau, puis rendue telle quelle. */
+
+function effacerZone(){
+  editeur.querySelectorAll('span.zone').forEach(sp => {
+    const parent = sp.parentNode;
+    while (sp.firstChild) parent.insertBefore(sp.firstChild, sp);
+    parent.removeChild(sp);
+    parent.normalize();
+  });
+  document.querySelectorAll('#remarquesListe li.vise').forEach(li => li.classList.remove('vise'));
+}
+
+/* Texte de l'éditeur mis à plat, avec de quoi revenir aux nœuds d'origine. */
+function indexTexte(){
+  const noeuds = [];
+  let plein = '';
+  const marcheur = document.createTreeWalker(editeur, NodeFilter.SHOW_TEXT);
+  while (marcheur.nextNode()){
+    const n = marcheur.currentNode;
+    noeuds.push({ n, debut: plein.length });
+    plein += n.data;
+  }
+  return { noeuds, plein };
+}
+
+/* Forme comparable — minuscules, espaces réduits — et table des positions. */
+function compacter(t){
+  let out = '';
+  const carte = [];
+  for (let i = 0; i < t.length; i++){
+    const c = t[i];
+    if (/\s/.test(c)){
+      if (!out || out.endsWith(' ')) continue;
+      out += ' ';
+    } else {
+      out += c.toLowerCase();
+    }
+    carte.push(i);
+  }
+  return { out, carte };
+}
+
+function positionDans(idx, global){
+  for (const e of idx.noeuds){
+    if (global >= e.debut && global <= e.debut + e.n.data.length) return { n: e.n, o: global - e.debut };
+  }
+  const dernier = idx.noeuds[idx.noeuds.length - 1];
+  return dernier ? { n: dernier.n, o: dernier.n.data.length } : null;
+}
+
+function marquerZone(phrase){
+  const idx = indexTexte();
+  if (!idx.noeuds.length) return null;
+  const texte = compacter(idx.plein);
+  const cible = compacter(phrase || '').out.trim();
+  if (!cible) return null;
+
+  /* Repli progressif : si la phrase entière ne se retrouve pas telle quelle,
+     on cherche ses premiers mots. */
+  let pos = texte.out.indexOf(cible), taille = cible.length;
+  if (pos === -1){
+    const mots = cible.split(' ').filter(Boolean);
+    for (let n = Math.min(mots.length, 10); n >= 2 && pos === -1; n--){
+      const bout = mots.slice(0, n).join(' ');
+      pos = texte.out.indexOf(bout);
+      taille = bout.length;
+    }
+  }
+  if (pos === -1) return null;
+
+  const debut = positionDans(idx, texte.carte[pos]);
+  const fin   = positionDans(idx, texte.carte[pos + taille - 1] + 1);
+  if (!debut || !fin) return null;
+
+  const plage = document.createRange();
+  plage.setStart(debut.n, debut.o);
+  plage.setEnd(fin.n, fin.o);
+
+  const concernes = idx.noeuds.map(e => e.n).filter(n => plage.intersectsNode(n));
+  const bornes = concernes.map(n => ({
+    n,
+    d: (n === plage.startContainer) ? plage.startOffset : 0,
+    f: (n === plage.endContainer)   ? plage.endOffset   : n.data.length
+  }));
+
+  const marques = [];
+  bornes.forEach(b => {
+    if (b.f <= b.d) return;
+    let bout = b.n;
+    if (b.f < bout.data.length) bout.splitText(b.f);
+    if (b.d > 0) bout = bout.splitText(b.d);
+    const sp = document.createElement('span');
+    sp.className = 'zone';
+    bout.parentNode.insertBefore(sp, bout);
+    sp.appendChild(bout);
+    marques.push(sp);
+  });
+  return marques.length ? marques[0] : null;
+}
+
+document.getElementById('remarquesListe').addEventListener('click', (e) => {
+  const li = e.target && e.target.closest ? e.target.closest('li') : null;
+  if (!li || !/^rem-\d+$/.test(li.id)) return;
+  effacerZone();
+  li.classList.add('vise');
+  const phrase = li.querySelector('.phrase');
+  const zone = phrase ? marquerZone(phrase.textContent) : null;
+  if (!zone){
+    message("Cette phrase n'a pas été retrouvée telle quelle dans le texte.");
+    return;
+  }
+  if (editeur.classList.contains('lecture')) centrerMot(zone);
+  else zone.scrollIntoView({ behavior:'smooth', block:'center' });
 });
 
 document.getElementById('doutesListe').addEventListener('click', (e) => {
