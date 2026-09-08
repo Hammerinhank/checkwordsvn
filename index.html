@@ -289,7 +289,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V24</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V25</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -478,7 +478,9 @@
         coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras — et inversement, cliquer
         une explication centre le mot dans le texte, un nouveau clic allant à son occurrence suivante.
         Pendant cette lecture, le texte et les explications forment deux fenêtres qui défilent chacune de
-        leur côté, séparées par le bandeau « OK » ; le texte n'est pas modifiable, si bien que le clavier
+        leur côté, séparées par le bandeau « OK », et se partagent la hauteur de l'écran — sur un grand
+        écran la fenêtre du bas garde de quoi montrer plusieurs définitions, sur un petit elle se réduit
+        à celle qui est visée ; le texte n'est pas modifiable, si bien que le clavier
         ne s'ouvre pas sur un mot cliqué. Le bandeau « OK » rend au texte sa couleur et ses boutons.
         Tout ce qui est à l'écran — modifications, remarques, traduction, vocabulaire, mode lecture — est
         rangé avec le texte auquel il se rapporte : fermer la page et la rouvrir la retrouve dans l'état
@@ -656,8 +658,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V24';
+const VERSION = 'V25';
 const HISTORIQUE = [
+  { v:'V25', d:'sept. 2026', t:"En lecture du vocabulaire, les deux fenêtres se partagent maintenant la hauteur réellement disponible, mesurée à l'écran : environ 62 % pour le texte, le reste pour les explications, avec un plancher confortable en bas. Sur grand écran la fenêtre du bas garde sa hauteur et montre plusieurs définitions, celle qui est visée y étant simplement amenée ; sur petit écran elle continue de se réduire à l'explication visée. Le partage est recalculé au redimensionnement de la fenêtre." },
   { v:'V24', d:'sept. 2026', t:"Cinquième bouton : une requête de vocabulaire qui marque tous les mots du texte, à la seule exception des quelques mots élémentaires qu'un débutant connaît après deux mois d'apprentissage. Même fonctionnement que les deux autres requêtes de vocabulaire." },
   { v:'V23', d:'sept. 2026', t:"Quatrième bouton dans « Envoyer la requête à la main » : la même requête de vocabulaire, mais pour le niveau A1. Le seuil décrit à l'IA est adapté au niveau demandé, et le reste du fonctionnement — texte inchangé, mots colorés, explications cliquables — est identique." },
   { v:'V22', d:'sept. 2026', t:"L'affichage courant est conservé d'une session à l'autre : la fenêtre des modifications, les remarques, la traduction, la liste de vocabulaire, le mode lecture et le retour en arrière sont rangés avec le texte auquel ils se rapportent. Rouvrir la page retrouve l'écran tel qu'il était, et chaque texte garde son propre affichage. L'envoi vers GitHub, lui, ne porte toujours que sur le texte." },
@@ -1911,7 +1914,34 @@ function entrerModeMots(){
   liste.classList.add('compact');
   liste.style.maxHeight = Math.round(window.innerHeight * 0.30) + 'px';
   occurrences = {};
+  ajusterHauteurs();
+  setTimeout(ajusterHauteurs, 80);      /* une fois la mise en page stabilisée */
 }
+
+/* Écran large : les deux fenêtres se partagent la hauteur restante, la part
+   du lion allant au texte, sans que celle des explications devienne étroite. */
+function estLarge(){ return window.innerWidth >= 760; }
+
+function ajusterHauteurs(){
+  if (!editeur.classList.contains('lecture')) return;
+  const liste = document.getElementById('motsListe');
+  const rEditeur = editeur.getBoundingClientRect();
+  const rResume  = resume.getBoundingClientRect();
+  const rListe   = liste.getBoundingClientRect();
+  const entre  = Math.max(0, rResume.top - rEditeur.bottom);   /* bandeau OK et ligne d'état */
+  const dessus = Math.max(0, rListe.top - rResume.top);        /* titre de la fenêtre du bas */
+  const dispo  = window.innerHeight - Math.max(rEditeur.top, 0) - entre - dessus - 24;
+  if (dispo < 260) return;                                     /* trop peu de place : on garde les valeurs par défaut */
+
+  const large = estLarge();
+  let bas = Math.round(dispo * (large ? 0.38 : 0.32));
+  bas = Math.max(large ? 180 : 96, Math.min(bas, large ? 460 : 260));
+  const haut = Math.max(200, dispo - bas);
+  editeur.style.maxHeight = haut + 'px';
+  liste.style.maxHeight   = bas + 'px';
+}
+
+window.addEventListener('resize', ajusterHauteurs);
 
 /* Sortie du mode lecture : le texte et la liste retrouvent leur taille libre. */
 function quitterModeMots(){
@@ -1922,6 +1952,7 @@ function quitterModeMots(){
   btnOk.textContent = 'OK';
   liste.classList.remove('compact');
   liste.style.maxHeight = '';
+  editeur.style.removeProperty('max-height');
   editeur.style.removeProperty('min-height');
   occurrences = {};
 }
@@ -1977,6 +2008,7 @@ function appliquerVocabulaire(brut){
   afficherMots(mots);
   const carte = editeur.closest('.carte');
   if (carte) carte.scrollIntoView({ behavior:'smooth', block:'start' });
+  setTimeout(ajusterHauteurs, 450);      /* une fois le défilement terminé */
   message(mots.length + (mots.length > 1 ? ' mots signalés' : ' mot signalé') +
           (surligne.zones > mots.length ? ', ' + surligne.zones + ' occurrences colorées' : '') +
           ' : clique un mot coloré, ou son explication en dessous.' +
@@ -1994,9 +2026,18 @@ function effacerVise(){
    celle de l'explication, avec un minimum pour les toutes petites. */
 function cadrerExplication(li){
   const liste = document.getElementById('motsListe');
-  const haut = Math.min(Math.max(li.offsetHeight + 14, 84), Math.round(window.innerHeight * 0.30));
-  liste.style.maxHeight = haut + 'px';
-  liste.scrollTop = Math.max(0, li.offsetTop - 6);
+  if (estLarge()){
+    /* Place pour plusieurs définitions : on garde la hauteur et on se contente
+       d'amener celle qui est visée dans la fenêtre. */
+    const bas = li.offsetTop + li.offsetHeight;
+    if (li.offsetTop < liste.scrollTop + 4) liste.scrollTop = Math.max(0, li.offsetTop - 6);
+    else if (bas > liste.scrollTop + liste.clientHeight - 4) liste.scrollTop = bas - liste.clientHeight + 8;
+  } else {
+    /* Petit écran : la fenêtre du bas se réduit à l'explication visée. */
+    const haut = Math.min(Math.max(li.offsetHeight + 14, 84), Math.round(window.innerHeight * 0.30));
+    liste.style.maxHeight = haut + 'px';
+    liste.scrollTop = Math.max(0, li.offsetTop - 6);
+  }
   const carte = resume.getBoundingClientRect();
   if (carte.top < 0 || carte.bottom > window.innerHeight) resume.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
