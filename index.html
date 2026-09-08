@@ -94,6 +94,7 @@
   .boutons{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
   /* Le bouton OK est repoussé contre le bord droit de la page. */
   #btnOk{margin-left:auto;min-width:76px}
+  #btnOk[hidden]{display:none}
   button{
     font-family:inherit;font-size:.95rem;
     border-radius:8px;border:1px solid var(--trait);
@@ -144,26 +145,6 @@
   #resume li{margin:3px 0;font-family:var(--serif);font-size:1.02rem}
   #resume .avant{color:var(--encre-douce);text-decoration:line-through}
   #resume .apres{color:var(--laque);font-weight:600}
-  /* Mots signalés par l'IA sans être corrigés : elle laisse ton mot en place.
-     [!…] ambre plein — le contexte rend l'erreur certaine.
-     [?…] ambre pointillé — elle hésite et te laisse trancher. */
-  .faux{
-    color:var(--ambre);background:#FBF0E0;font-weight:700;
-    border-bottom:2px solid var(--ambre);border-radius:3px;padding:0 2px;cursor:pointer;
-  }
-  .doute{
-    color:var(--ambre);background:#FCF6EC;
-    border-bottom:2px dotted var(--ambre);border-radius:3px;padding:0 2px;cursor:pointer;
-  }
-  .faux.vise,.doute.vise{background:#F3DFC0}
-  #blocDoutes{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
-  #blocCorrections[hidden] + #blocDoutes{border-top:none;margin-top:0;padding-top:0}
-  #doutesListe{margin:0;padding-left:20px}
-  #doutesListe li{margin:6px 0;font-size:.95rem;cursor:pointer}
-  #doutesListe li.vise{font-weight:700}
-  #doutesListe .mot{font-family:var(--serif);font-size:1.02rem;color:var(--ambre);display:block}
-  #doutesListe .quoi{color:var(--encre-douce);display:block;font-weight:inherit}
-
   #blocRemarques{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
   #blocCorrections[hidden] + #blocRemarques{border-top:none;margin-top:0;padding-top:0}
   #remarquesListe{margin:0;padding-left:20px}
@@ -172,10 +153,10 @@
   #remarquesListe .quoi{color:var(--encre-douce);display:block}
   #remarquesListe li.rien{list-style:none;margin-left:-20px;color:var(--jade)}
   #blocTraduction{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
-  #blocCorrections[hidden] + #blocDoutes[hidden] + #blocRemarques[hidden] + #blocTraduction{border-top:none;margin-top:0;padding-top:0}
+  #blocCorrections[hidden] + #blocRemarques[hidden] + #blocTraduction{border-top:none;margin-top:0;padding-top:0}
   #traductionTexte p{margin:6px 0;font-size:.98rem;line-height:1.55}
   #blocMots{border-top:1px solid var(--trait);margin-top:14px;padding-top:12px}
-  #blocCorrections[hidden] + #blocDoutes[hidden] + #blocRemarques[hidden] + #blocTraduction[hidden] + #blocMots{
+  #blocCorrections[hidden] + #blocRemarques[hidden] + #blocTraduction[hidden] + #blocMots{
     border-top:none;margin-top:0;padding-top:0;
   }
   #motsListe{margin:0;padding-left:20px}
@@ -317,23 +298,6 @@
 
   .aide{font-size:.88rem;color:var(--encre-douce);margin:18px 0 0;max-width:62ch}
 
-  /* Fenêtre de vérification : elle s'ouvre avant que l'éditeur ne soit touché,
-     quand le contenu collé ne ressemble pas à une correction du texte. */
-  #dlgVerif .modal-tete h2{color:var(--laque)}
-  .verif-resume{margin:0 0 16px;font-size:.95rem;line-height:1.55}
-  .verif-bloc{margin-bottom:12px}
-  .verif-bloc h3{
-    font-family:var(--sans);font-size:.76rem;font-weight:700;
-    color:var(--encre-douce);margin:0 0 5px;
-    text-transform:uppercase;letter-spacing:.06em;
-  }
-  .verif-extrait{
-    font-family:var(--serif);font-size:1.02rem;line-height:1.5;margin:0;
-    background:#F4F6F3;border:1px solid var(--trait);border-radius:6px;
-    padding:8px 10px;word-wrap:break-word;
-  }
-  .verif-extrait.vide{font-family:var(--sans);font-size:.9rem;color:var(--encre-douce);font-style:italic}
-
   @media (max-width:520px){
     #editeur{font-size:1.1rem}
     .boutons button{flex:1 1 auto}
@@ -347,7 +311,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V33</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V32</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -374,10 +338,6 @@
       <h2 id="resumeTitre">Corrections</h2>
       <ol id="resumeListe"></ol>
     </div>
-    <div id="blocDoutes" hidden>
-      <h2 id="doutesTitre">Mots signalés</h2>
-      <ul id="doutesListe"></ul>
-    </div>
     <div id="blocRemarques" hidden>
       <h2 id="remarquesTitre">Tournures à revoir</h2>
       <ul id="remarquesListe"></ul>
@@ -395,7 +355,7 @@
   <details class="section" id="secRequete">
     <summary>Envoyer la requête à la main <span class="note">quand <span class="nom-ia">ChatGPT</span> est déjà ouvert</span></summary>
     <div class="section-corps">
-      <p class="expl">Deux requêtes, deux boutons qui se comportent tous les deux comme le bouton d'envoi principal : ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API. La première est la requête habituelle : l'IA lit le texte en entier, corrige les fautes de frappe, et juge en outre chaque phrase dans le contexte de l'ensemble, ce qui lui permet de signaler les mots bien orthographiés qui ne sont pourtant pas les bons — en ambre plein quand elle est sûre du mot juste, en ambre pointillé quand elle hésite et te laisse trancher — puis relit le naturel des tournures. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct. Les trois dernières ne corrigent rien : elles repèrent les mots qu'un étudiant ne connaît probablement pas — au niveau A2, au niveau A1 pour une liste plus généreuse, ou presque tous les mots du texte pour un vrai débutant — et les colorent dans le texte ; un clic sur un mot coloré amène son explication sous les yeux, en gras. Le bouton OK, ou « Accepter les corrections », retire la couleur.</p>
+      <p class="expl">Deux requêtes, deux boutons qui se comportent tous les deux comme le bouton d'envoi principal : ouverture de l'IA avec la requête pré-remplie et copie dans le presse-papier, ou appel direct en mode API. La première est la requête habituelle : correction des fautes de frappe, plus la relecture du naturel. La seconde s'adresse à un texte écrit d'un seul tenant, sans ponctuation ou presque : elle demande de découper les phrases, de poser la ponctuation et les majuscules, et de signaler à part les phrases qui demanderaient davantage qu'une ponctuation pour être du vietnamien correct. Les trois dernières ne corrigent rien : elles repèrent les mots qu'un étudiant ne connaît probablement pas — au niveau A2, au niveau A1 pour une liste plus généreuse, ou presque tous les mots du texte pour un vrai débutant — et les colorent dans le texte ; un clic sur un mot coloré amène son explication sous les yeux, en gras. Le bouton OK, ou « Accepter les corrections », retire la couleur.</p>
       <div class="boutons" style="margin-top:0">
         <button id="btnCopier">Envoyer la requête de correction</button>
         <button id="btnCopierPonctuation">Envoyer la requête de ponctuation</button>
@@ -517,19 +477,16 @@
         de l'atteindre : par un onglet web, ou par un appel direct à son API, qui écrit la correction dans l'éditeur
         en une ou deux secondes sans copier-coller. En mode onglet, le bouton d'envoi ouvre l'IA avec la requête
         pré-remplie et allume en vert « Appliquer la correction » : c'est le rappel qu'une réponse est attendue.
-        Juste après l'application d'une correction, le bouton « OK », à droite de la ligne, s'allume en vert
-        vif : un clic dessus accepte tout et retire les mots barrés d'un seul geste ; il s'éteint dès qu'on
-        clique n'importe où ailleurs.
+        Juste après l'application d'une correction, le bouton qui termine le travail s'allume en vert vif ;
+        il s'éteint dès qu'on clique n'importe où ailleurs. Quand l'IA propose des suppressions, deux
+        boutons cohabitent : « Accepter et garder les mots barrés » et, à droite, « Accepter et retirer les
+        mots barrés ». Sans mot barré ils feraient la même chose, le second est donc masqué et le premier
+        redevient simplement « Accepter les corrections ».
         Ce bouton d'envoi suit ensuite le cycle du travail : il devient « Accepter les corrections » une fois le texte
         corrigé affiché, puis retrouve son libellé d'origine quand tu as accepté. Dans le texte, un mot en rouge
         a été corrigé, un mot en rouge gras est un ajout proposé, un mot en rouge barré est une suppression
         proposée : accepter garde tout en texte simple, y compris les mots barrés que tu n'as pas effacés
-        toi-même. Deux couleurs de plus, en ambre, ne touchent jamais au texte : l'IA ayant lu l'ensemble
-        avant de juger chaque phrase, elle signale les mots correctement orthographiés qui ne sont pourtant
-        pas les bons dans ce contexte — souligné d'un trait plein quand le sens du texte rend l'erreur
-        certaine et qu'elle connaît le mot juste, en pointillé quand elle hésite et te laisse trancher.
-        Ton mot reste en place dans les deux cas : la section « Mots signalés » donne l'explication, un clic
-        sur un mot ambre y amène, un clic sur une explication ramène au mot. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part
+        toi-même. Pour les retirer tous d'un coup, ouvre « Mettre le texte au propre ». Seul le texte brut part
         vers l'IA — le rouge n'est jamais envoyé. La requête demande en outre à l'IA une seconde partie de
         réponse, séparée par une ligne repère : les phrases qui, même sans faute de frappe, seraient
         bancales ou sonneraient étrangement à l'oreille d'un natif. Elles s'affichent sous la liste des
@@ -556,12 +513,7 @@
         reste donc sans effet.
         Tout ce qui est à l'écran — modifications, remarques, traduction, vocabulaire, mode lecture — est
         rangé avec le texte auquel il se rapporte : fermer la page et la rouvrir la retrouve dans l'état
-        où elle était, et chaque texte garde son propre affichage. Rien de tout cela ne part sur GitHub.
-        Avant d'écrire quoi que ce soit dans l'éditeur, la page vérifie que le contenu collé est bien
-        une réponse à ton texte : elle compte les mots qu'ils ont en commun. Si la part est trop
-        faible — presse-papier contenant autre chose, réponse à un autre texte —, l'éditeur n'est pas
-        touché et une fenêtre te montre les deux débuts de texte avant de te laisser trancher.
-        Dans le même esprit, « Tout effacer » ne s'exécute qu'au second clic. La section « Changer de texte » permet de tenir plusieurs
+        où elle était, et chaque texte garde son propre affichage. Rien de tout cela ne part sur GitHub. La section « Changer de texte » permet de tenir plusieurs
         textes en parallèle : chacun garde son contenu, son dernier envoi à l'IA et sa propre sauvegarde
         GitHub, et la barre à gauche de l'éditeur passe à l'orange dès que le texte affiché s'écarte de la
         version enregistrée dans le dépôt.
@@ -701,28 +653,6 @@
   </div>
 </dialog>
 
-<dialog id="dlgVerif">
-  <div class="modal-tete">
-    <h2 id="titreVerif">Vérification</h2>
-    <button class="fermer" data-fermer aria-label="Fermer">✕</button>
-  </div>
-  <div class="modal-corps">
-    <p class="verif-resume" id="verifResume"></p>
-    <div class="verif-bloc">
-      <h3>Ton texte</h3>
-      <p class="verif-extrait" lang="vi" id="verifTien"></p>
-    </div>
-    <div class="verif-bloc" style="margin-bottom:0">
-      <h3 id="verifTitreColle">Ce qui a été collé</h3>
-      <p class="verif-extrait" lang="vi" id="verifColle"></p>
-    </div>
-  </div>
-  <div class="modal-pied">
-    <button id="btnVerifAnnuler" data-fermer>Annuler</button>
-    <button id="btnVerifForcer">Appliquer quand même</button>
-  </div>
-</dialog>
-
 <dialog id="dlgNom">
   <div class="modal-tete">
     <h2 id="titreNom">Nom du texte</h2>
@@ -757,10 +687,9 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V33';
+const VERSION = 'V32';
 const HISTORIQUE = [
-  { v:'V33', d:'sept. 2026', t:"La requête de correction ne se limite plus aux fautes de frappe : l'IA lit d'abord le texte en entier, puis juge chaque phrase dans ce contexte d'ensemble, ce qui lui permet de repérer les mots correctement orthographiés qui ne sont pourtant pas les bons. Deux marques nouvelles, qui ne touchent jamais au texte : [!mot] quand le contexte rend l'erreur certaine — l'IA indique le mot juste —, et [?mot] quand elle hésite et te laisse trancher. Les mots signalés s'affichent en ambre dans l'éditeur, soulignés d'un trait plein pour les premiers, pointillé pour les seconds, et une section « Mots signalés » donne l'explication de chacun. Un clic sur un mot ambre amène son explication, un clic sur une explication ramène au mot. La réponse compte donc trois parties au lieu de deux, et les repères sont reconnus quel que soit leur ordre. Le second bouton d'envoi manuel suit, puisqu'il envoie la même requête." },
-  { v:'V32', d:'sept. 2026', t:"Garde-fou avant toute écriture dans l'éditeur : la part de mots que le contenu collé a en commun avec le texte est mesurée avant que quoi que ce soit ne soit modifié. Au-delà de 70 % de mots communs, l'application est immédiate comme auparavant. En dessous, l'éditeur n'est pas touché : une fenêtre annonce combien de mots seraient remplacés, montre le début de l'un et de l'autre, et laisse le choix d'appliquer ou d'annuler. Sous 25 %, le contenu est déclaré étranger au texte et c'est l'annulation qui est mise en avant. Même principe pour le vocabulaire : si aucun mot de la liste ne se trouve dans le texte, rien n'est modifié. Enfin, « Tout effacer » demande confirmation en deux clics, sur le modèle du bandeau OK." },
+  { v:'V32', d:'sept. 2026', t:"Les deux boutons d'acceptation disent enfin ce qu'ils font : « Accepter et garder les mots barrés » et « Accepter et retirer les mots barrés ». Quand le texte ne contient aucun mot barré, les deux seraient équivalents : le second est masqué et le premier redevient « Accepter les corrections ». Le vert vif de fin de travail se pose sur celui des deux qui est visible." },
   { v:'V31', d:'sept. 2026', t:"Un mot coloré grossit quand on clique dessus, et d'un cran de plus à chaque nouveau clic sur le même mot, jusqu'au double de sa taille. Il retrouve sa taille normale dès qu'on clique ailleurs, en même temps qu'il perd son gras." },
   { v:'V30', d:'sept. 2026', t:"Le bandeau « OK — revenir au texte » demande confirmation : le premier clic le fait passer à l'orange en affichant « Confirmer : revenir au texte ? » pendant cinq secondes, et seul un second clic quitte la lecture. Passé ce délai, ou après un clic ailleurs dans la page, le premier clic est oublié. Hors lecture, le bouton OK agit toujours immédiatement." },
   { v:'V29', d:'sept. 2026', t:"En lecture, l'en-tête se fait discret à son tour : la phrase d'explication sous le titre disparaît et le titre lui-même se réduit, ce qui rend une bonne partie de la hauteur aux deux fenêtres sur un écran de téléphone." },
@@ -812,7 +741,6 @@ const resumeTitre = document.getElementById('resumeTitre');
 const btnAppliquer= document.getElementById('btnAppliquer');
 const btnEnvoyer  = document.getElementById('btnEnvoyer');
 const btnOk       = document.getElementById('btnOk');
-const btnVider    = document.getElementById('btnVider');
 const btnGhEnvoyer= document.getElementById('btnGhEnvoyer');
 const sousTitre   = document.getElementById('sousTitre');
 const champCle    = document.getElementById('cleApi');
@@ -1010,13 +938,15 @@ function eteindreAttente(){ btnAppliquer.classList.remove('attente'); }
    appliquée : un clic dessus accepte tout et retire les mots barrés.
    Il s'éteint au premier clic, où qu'il soit fait dans la page. */
 function allumerOk(){
-  setTimeout(() => btnOk.classList.add('attente'), 0);   // après le clic en cours
+  setTimeout(() => { (btnOk.hidden ? btnAppliquer : btnOk).classList.add('attente'); }, 0);
 }
-function eteindreOk(){ btnOk.classList.remove('attente'); }
+function eteindreOk(){
+  btnOk.classList.remove('attente');
+  if (modeBouton === 'accepter') btnAppliquer.classList.remove('attente');
+}
 
 document.addEventListener('click', (e) => {
   if (e.target !== btnOk && !btnOk.contains(e.target)){ eteindreOk(); if (attenteOk) annulerConfirmationOk(); }
-  if (attenteVider && e.target !== btnVider && !btnVider.contains(e.target)) annulerConfirmationVider();
   const dedans = e.target && e.target.closest &&
                  (e.target.closest('#editeur .dur') || e.target.closest('#motsListe li'));
   if (!dedans) effacerVise();
@@ -1054,14 +984,32 @@ let modeBouton = 'appliquer';
 function passerEnModeAccepter(){
   modeBouton = 'accepter';
   eteindreAttente();
-  btnAppliquer.textContent = 'Accepter les corrections';
-  btnAppliquer.title = 'Retirer le rouge et garder le texte corrigé';
+  majBoutonsAcceptation();
+}
+
+/* Les deux boutons d'acceptation ne diffèrent que par le sort des mots barrés.
+   Sans mot barré ils feraient la même chose : le second est alors masqué. */
+function majBoutonsAcceptation(){
+  if (editeur.classList.contains('lecture')) return;   /* le bandeau est géré à part */
+  const barres = !!editeur.querySelector('.suppr');
+
+  if (modeBouton === 'accepter'){
+    btnAppliquer.textContent = barres ? 'Accepter et garder les mots barrés' : 'Accepter les corrections';
+    btnAppliquer.title = barres
+      ? 'Retirer le rouge, garder les mots que ' + nomIA() + ' propose de supprimer'
+      : 'Retirer le rouge et garder le texte corrigé';
+  }
+
+  btnOk.hidden = !barres;
+  btnOk.textContent = 'Accepter et retirer les mots barrés';
+  btnOk.title = 'Retirer le rouge et supprimer les mots que ' + nomIA() + ' propose d\'enlever';
 }
 
 function passerEnModeAppliquer(){
   modeBouton = 'appliquer';
   btnAppliquer.textContent = 'Appliquer la correction';
   btnAppliquer.title = 'Reprendre la réponse de ' + nomIA() + ' depuis le presse-papier';
+  majBoutonsAcceptation();
 }
 
 /* Texte brut de l'éditeur : la mise en forme (rouge) est ignorée,
@@ -1117,9 +1065,9 @@ function comparer(avant, apres){
     }
   }
   const ops = [];
-  let i=0, j=0, communs=0;
+  let i=0, j=0;
   while (i<n && j<m){
-    if (avant[i] === apres[j]) { ops.push({op:'=', a:avant[i], b:apres[j], j}); communs++; i++; j++; }
+    if (avant[i] === apres[j]) { ops.push({op:'=', a:avant[i], b:apres[j], j}); i++; j++; }
     else if (dp[i+1][j] >= dp[i][j+1]) { ops.push({op:'-', a:avant[i]}); i++; }
     else { ops.push({op:'+', b:apres[j], j}); j++; }
   }
@@ -1148,20 +1096,17 @@ function comparer(avant, apres){
       changements.push({ avant:null, apres: ops[k].b });
     }
   }
-  return { marques, changements, communs };
+  return { marques, changements };
 }
 
-/* Analyse des marques : [-mot] suppression, [+mot] ajout, [!mot] mot faux,
-   [?mot] mot douteux. Les deux dernières laissent le mot de l'auteur en place. */
-const GENRE_MARQUE = { '+':'ajout', '-':'suppr', '\u2212':'suppr', '!':'faux', '?':'doute' };
-
+/* Analyse des marques [-mot] (suppression proposée) et [+mot] (ajout proposé). */
 function analyserMarques(s){
-  const re = /\[\s*([+\-\u2212!?])\s*([^\]]*?)\s*\]/g;
+  const re = /\[\s*([+\-\u2212])\s*([^\]]*?)\s*\]/g;
   const items = [];
   let dernier = 0, m;
   while ((m = re.exec(s)) !== null){
     if (m.index > dernier) items.push({ type:'texte', v: s.slice(dernier, m.index) });
-    items.push({ type: GENRE_MARQUE[m[1]] || 'suppr', v: m[2] });
+    items.push({ type: (m[1] === '+' ? 'ajout' : 'suppr'), v: m[2] });
     dernier = m.index + m[0].length;
   }
   if (dernier < s.length) items.push({ type:'texte', v: s.slice(dernier) });
@@ -1180,27 +1125,11 @@ function texteSansMarques(items){
   return items.map(it => it.v).join('').replace(/[ \t]{2,}/g, ' ').trim();
 }
 
-function afficherResultat(items, marques, doutes){
-  const rang = new Map();   /* mot signalé (en minuscules) -> ligne d'explication */
-  (doutes || []).forEach((d, i) => {
-    const c = cleMot(d.phrase);
-    if (c && !rang.has(c)) rang.set(c, i);
-  });
-
+function afficherResultat(items, marques){
   let idx = 0, html = '';
   for (const it of items){
     if (it.type === 'ajout'){
       html += '<span class="ajout" title="mot proposé à l\'ajout">' + echapper(it.v) + '</span>';
-      continue;
-    }
-    if (it.type === 'faux' || it.type === 'doute'){
-      const i = rang.has(cleMot(it.v)) ? rang.get(cleMot(it.v)) : -1;
-      const titre = it.type === 'faux'
-        ? "mot manifestement faux — voir l'explication"
-        : "mot douteux — voir l'explication";
-      html += '<span class="' + it.type + '"' + (i >= 0 ? ' data-d="' + i + '"' : '') +
-              ' title="' + titre + '">' + echapper(it.v) + '</span>';
-      idx += mots(it.v).length;
       continue;
     }
     let bloc = '';
@@ -1258,30 +1187,14 @@ function afficherTraduction(traduction){
   return true;
 }
 
-/* Mots signalés [!…] et [?…] : chacun avec son explication, cliquable. */
-function afficherDoutes(doutes){
-  const bloc  = document.getElementById('blocDoutes');
-  const liste = document.getElementById('doutesListe');
-  const titre = document.getElementById('doutesTitre');
-  if (!doutes || !doutes.length){ bloc.hidden = true; liste.innerHTML = ''; return false; }
-  bloc.hidden = false;
-  titre.textContent = doutes.length === 1 ? '1 mot signalé' : doutes.length + ' mots signalés';
-  liste.innerHTML = doutes.map((d, i) =>
-    '<li id="doute-' + i + '">' +
-    (d.phrase ? '<span class="mot" lang="vi">' + echapper(d.phrase) + '</span>' : '') +
-    '<span class="quoi">' + echapper(d.quoi) + '</span></li>').join('');
-  return true;
-}
-
-function afficherResume(changements, remarques, presente, traduction, doutes){
+function afficherResume(changements, remarques, presente, traduction){
   document.getElementById('blocMots').hidden = true;
   quitterModeMots();
-  const avecDoutes      = afficherDoutes(doutes || []);
   const avecRemarques   = afficherRemarques(remarques || [], !!presente);
   const avecTraduction  = afficherTraduction(traduction || '');
   const blocCorr = document.getElementById('blocCorrections');
   blocCorr.hidden = !changements.length;
-  if (!changements.length && !avecDoutes && !avecRemarques && !avecTraduction){ resume.style.display='none'; sauverVue(); return; }
+  if (!changements.length && !avecRemarques && !avecTraduction){ resume.style.display='none'; sauverVue(); return; }
   resume.style.display = 'block';
   if (!changements.length){ sauverVue(); return; }
   resumeTitre.textContent = changements.length === 1 ? '1 modification' : changements.length + ' modifications';
@@ -1363,6 +1276,7 @@ function sauver(){
   docsEnregistrer();
   localStorage.setItem(CLE_TEXTE, d.texte);       /* compatibilité */
   localStorage.setItem(CLE_ENVOYE, texteEnvoye);
+  majBoutonsAcceptation();
   majEtatTexte();
 }
 
@@ -1484,7 +1398,7 @@ function afficherDoc(nom, msg){
   restaurerVue(d.vue);
   eteindreAttente();
   eteindreOk();
-  if (editeur.querySelector('.corr, .ajout, .suppr, .faux, .doute')) passerEnModeAccepter(); else passerEnModeAppliquer();
+  if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
   majCompteur();
   docsEnregistrer();
   localStorage.setItem(CLE_TEXTE, d.texte || '');
@@ -1674,15 +1588,11 @@ document.getElementById('btnTexteSupprimer').addEventListener('click', async () 
 
 /* ---------- requête vers l'IA ---------- */
 
-const CONSIGNE = "Tu es un correcteur de vietnamien. Tu lis le texte en entier avant de corriger, et tu réponds exactement dans le format en trois parties qui t'est demandé, sans rien y ajouter.";
+const CONSIGNE = "Tu es un correcteur de fautes de frappe en vietnamien. Tu réponds exactement dans le format en deux parties qui t'est demandé, sans rien y ajouter.";
 
 /* Ligne qui sépare le texte corrigé des remarques sur le naturel des phrases. */
 const SEPARATEUR = '===REMARQUES===';
 const RE_SEPARATEUR = /^[ \t]*=+[ \t]*REMARQUES[ \t]*=+[ \t]*$/im;
-
-/* Ligne qui introduit les mots signalés [!…] et [?…] par la requête de correction. */
-const SEPARATEUR_DOUTES = '===DOUTES===';
-const RE_DOUTES = /^[ \t]*=+[ \t]*DOUTES[ \t]*=+[ \t]*$/im;
 
 /* Ligne qui introduit la liste du vocabulaire difficile. */
 const SEPARATEUR_MOTS = '===MOTS===';
@@ -1694,56 +1604,38 @@ const RE_TRADUCTION = /^[ \t]*=+[ \t]*TRADUCTION[ \t]*=+[ \t]*$/im;
 
 function construireRequete(texte){
   return [
-    "Voici un texte en vietnamien écrit par un francophone qui apprend la langue. Il contient peut-être des fautes de frappe, et peut-être aussi des mots qui ne sont pas ceux que l'auteur voulait écrire.",
+    "Voici une phrase (ou un court texte) en vietnamien qui contient peut-être des fautes de frappe.",
     "",
-    "Commence par lire le texte en entier pour en comprendre le propos. Chaque phrase doit ensuite être jugée dans ce contexte d'ensemble, et non isolément : un mot correctement orthographié peut être le mauvais mot au vu de ce que le texte raconte.",
-    "",
-    "Tu as quatre marques à ta disposition, et elles ne changent jamais le nombre de mots.",
-    "",
-    "1. CORRECTION DIRECTE — un mot mal orthographié : lettres manquantes ou en trop, diacritiques et tons mal saisis. Tu le corriges directement, sans marque, en le remplaçant par sa forme correcte.",
-    "",
-    "2. [!mot] — un mot correctement orthographié, mais manifestement pas celui que l'auteur voulait : le sens du texte ne laisse pas de doute sur ce qu'il fallait écrire. Tu laisses le mot de l'auteur en place, entouré de crochets avec un point d'exclamation juste après le crochet ouvrant, et tu donnes le mot juste dans la partie DOUTES.",
-    "",
-    "3. [?mot] — un mot correctement orthographié qui te paraît douteux dans ce contexte, sans que tu puisses trancher : plusieurs lectures sont possibles, ou l'intention de l'auteur t'échappe. Tu laisses le mot en place avec un point d'interrogation juste après le crochet ouvrant, et tu expliques l'hésitation dans la partie DOUTES pour que l'auteur décide lui-même.",
-    "",
-    "4. [-mot] et [+mot] — un mot en trop, ou un mot manquant. Tu ne les enlèves ni ne les insères jamais directement : le mot en trop est recopié sous la forme [-mot], le mot manquant est écrit sous la forme [+mot] à l'endroit exact où il devrait aller.",
+    "Corrige uniquement les fautes de frappe : lettres manquantes ou en trop, signes diacritiques et tons mal saisis, mots mal orthographiés.",
     "",
     "Règles strictes :",
-    "- un seul mot par paire de crochets, et jamais de crochets imbriqués ;",
-    "- n'utilise jamais [!…] ni [?…] pour un mot simplement mal orthographié : celui-là se corrige directement ;",
-    "- réserve [!…] aux cas où le contexte rend l'erreur certaine ; au moindre doute, emploie [?…] ;",
-    "- ne change pas l'ordre des mots, ne reformule pas, ne traduis pas, n'améliore pas le style ;",
+    "- ne supprime et n'ajoute jamais un mot directement : le texte doit garder le même nombre de mots, sauf par les marques décrites ci-dessous ;",
+    "- si un mot te semble en trop, ne l'enlève pas : recopie-le entre crochets avec un signe moins juste après le crochet ouvrant, sous la forme [-mot] ;",
+    "- si un mot te semble manquant, ne l'insère pas tel quel : écris-le entre crochets avec un signe plus juste après le crochet ouvrant, sous la forme [+mot], à l'endroit exact où il devrait aller ;",
+    "- n'utilise ces crochets que pour ces deux cas, un seul mot par paire de crochets, et jamais pour un mot simplement mal orthographié (celui-là, corrige-le directement) ;",
+    "- ne change pas l'ordre des mots ;",
+    "- ne reformule pas, ne traduis pas, n'améliore pas le style ;",
     "- garde la ponctuation, les majuscules et les retours à la ligne à l'identique ;",
-    "- recopie exactement tels quels tous les mots que tu ne signales pas ;",
-    "- il est parfaitement normal qu'un texte ne contienne aucun [!…] ni aucun [?…] : n'en invente pas pour remplir la liste ;",
-    "- pas de guillemets, pas d'explication et pas de commentaire dans la première partie.",
+    "- ne corrige que les mots réellement incorrects, recopie les autres exactement tels quels ;",
+    "- pas de guillemets, pas d'explication et pas de commentaire dans cette partie.",
     "",
-    "Ta réponse comporte trois parties, dans cet ordre, introduites par des lignes repères :",
+    "Ta réponse comporte deux parties, séparées par une ligne contenant exactement " + SEPARATEUR + " :",
     "",
-    "PREMIÈRE PARTIE, au début de la réponse : le texte corrigé et marqué selon les règles ci-dessus, et rien d'autre.",
+    "PREMIÈRE PARTIE, avant cette ligne : le texte corrigé selon les règles ci-dessus, et rien d'autre.",
     "",
-    "SECONDE PARTIE, après une ligne contenant exactement " + SEPARATEUR_DOUTES + " : une ligne par mot marqué [!…] ou [?…], dans l'ordre du texte, sous la forme : le mot exactement tel qu'il est écrit dans le texte, puis une flèche →, puis l'explication. Pour un [!…], indique le mot juste et pourquoi le contexte l'impose. Pour un [?…], expose l'hésitation et les lectures possibles, sans trancher. Si tu n'as marqué aucun mot, écris seulement RAS sur une ligne.",
-    "",
-    "TROISIÈME PARTIE, après une ligne contenant exactement " + SEPARATEUR + " : les phrases qui, même une fois tout cela corrigé, ne sont pas grammaticalement correctes ou sonneraient bizarrement à l'oreille d'un locuteur natif vietnamien. Une phrase par ligne, sous la forme : la phrase concernée, puis une flèche →, puis ce qui cloche et la formulation naturelle attendue. N'y répète aucune correction déjà faite plus haut. Si toutes les phrases sont correctes et naturelles, écris seulement RAS sur une ligne.",
-    "",
-    "Langue des deux dernières parties : le français, impérativement. Tu t'adresses à un francophone qui apprend le vietnamien. Le vietnamien n'y apparaît que pour citer un mot ou une tournure, toujours suivi de sa traduction française.",
+    "SECONDE PARTIE, après cette ligne : les phrases qui, même une fois les fautes de frappe corrigées, ne sont pas grammaticalement correctes ou sonneraient bizarrement à l'oreille d'un locuteur natif vietnamien. Une phrase par ligne, sous la forme : la phrase concernée, puis une flèche →, puis en français ce qui cloche et la formulation naturelle attendue. N'y mets rien d'autre, et surtout aucune correction déjà faite dans la première partie. Si toutes les phrases sont correctes et naturelles, écris seulement RAS sur une ligne.",
     "",
     "Exemple de réponse complète :",
-    "Tôi mua một quyển sách ở [!bàn] và tôi đọc nó [?rồi] [-trường] [+mỗi] ngày.",
-    SEPARATEUR_DOUTES,
-    "bàn → « bàn » signifie « table ». Le texte parle d'acheter un livre : le mot attendu est « hiệu sách » (librairie), ou « tiệm » (boutique).",
-    "rồi → « rồi » marque l'accompli (« déjà »). Placé ici, il entre en tension avec l'idée de répétition quotidienne qui suit : soit tu voulais dire « je l'ai déjà lu », soit tu voulais « je le lis chaque jour », et il faudrait alors le retirer. À toi de choisir.",
+    "tôi đi học [-trường] [+rồi]",
     SEPARATEUR,
-    "tôi đọc nó mỗi ngày → correct, mais un natif dirait plus volontiers « ngày nào tôi cũng đọc » (« je le lis tous les jours sans exception »).",
+    "tôi đi học rồi → correct et naturel dans une conversation ; à l'écrit soutenu on préférerait « tôi đã đi học ».",
     "",
     "Texte :",
     texte
   ].join('\n');
 }
 
-/* La réponse arrive en parties introduites par des lignes repères. Les repères
-   sont cherchés là où ils se trouvent, sans supposer leur ordre : chaque bloc
-   court jusqu'au repère suivant, et le texte occupe ce qui précède le premier. */
+/* La réponse arrive en deux parties : le texte corrigé, puis les remarques. */
 function decouperReponse(brut){
   let t = (brut || '').replace(/\r/g, '');
 
@@ -1756,25 +1648,13 @@ function decouperReponse(brut){
     t = t.slice(0, j);
   }
 
-  const reperes = [];
-  const mr = t.match(RE_SEPARATEUR);
-  if (mr) reperes.push({ nom:'remarques', debut: t.indexOf(mr[0]), fin: t.indexOf(mr[0]) + mr[0].length });
-  const md = t.match(RE_DOUTES);
-  if (md) reperes.push({ nom:'doutes', debut: t.indexOf(md[0]), fin: t.indexOf(md[0]) + md[0].length });
-  reperes.sort((a, b) => a.debut - b.debut);
-
-  const texte = reperes.length ? t.slice(0, reperes[0].debut) : t;
-  const blocs = {};
-  reperes.forEach((r, i) => {
-    const finBloc = (i + 1 < reperes.length) ? reperes[i+1].debut : t.length;
-    blocs[r.nom] = t.slice(r.fin, finBloc);
-  });
-
+  const m = t.match(RE_SEPARATEUR);
+  if (!m) return { texte: t, remarques: [], presente: false, traduction };
+  const i = t.indexOf(m[0]);
   return {
-    texte,
-    remarques: blocs.remarques !== undefined ? analyserRemarques(blocs.remarques) : [],
-    presente:  blocs.remarques !== undefined,
-    doutes:    blocs.doutes    !== undefined ? analyserRemarques(blocs.doutes) : [],
+    texte: t.slice(0, i),
+    remarques: analyserRemarques(t.slice(i + m[0].length)),
+    presente: true,
     traduction
   };
 }
@@ -2111,6 +1991,7 @@ function entrerModeMots(){
   const liste = document.getElementById('motsListe');
   editeur.classList.add('lecture');
   document.body.classList.add('lecture');
+  btnOk.hidden = false;
   editeur.setAttribute('contenteditable', 'false');
   document.getElementById('boutonsPrincipaux').classList.add('lecture');
   btnOk.textContent = 'OK — revenir au texte';
@@ -2184,6 +2065,7 @@ function quitterModeMots(){
   attenteOk = null;
   btnOk.classList.remove('confirme');
   btnOk.textContent = 'OK';
+  majBoutonsAcceptation();
   liste.classList.remove('compact');
   liste.style.maxHeight = '';
   liste.style.removeProperty('height');
@@ -2236,14 +2118,6 @@ function appliquerVocabulaire(brut){
 
   const conforme = aplatir(marque.replace(/\{\{|\}\}/g, '')) === aplatir(reference);
   const surligne = surlignerMots(reference, mots);
-
-  /* Garde-fou : si pas un seul mot de la liste ne se trouve dans le texte,
-     c'est que le contenu collé se rapporte à autre chose. On n'écrit rien. */
-  if (!surligne.zones){
-    message("Aucun des " + mots.length + " mots de cette liste ne se trouve dans ton texte : " +
-            "le contenu collé se rapporte visiblement à un autre texte. Rien n'a été modifié.", true);
-    return;
-  }
 
   htmlAvantCorrection = editeur.innerHTML;
   editeur.innerHTML = surligne.html;
@@ -2335,114 +2209,6 @@ document.getElementById('motsListe').addEventListener('click', (e) => {
   centrerMot(marques[rang]);
 });
 
-/* ---------- garde-fou avant d'écrire dans l'éditeur ----------
-   Le presse-papier ne contient pas toujours ce qu'on croit : la réponse à un
-   autre texte, la requête au lieu de la réponse, ou n'importe quoi copié
-   entre-temps. Avant de remplacer le texte, on mesure la part de mots que le
-   contenu collé a en commun avec le texte de référence : une correction de
-   frappe en conserve la quasi-totalité, un contenu étranger n'en garde
-   presque aucun. Rien n'est écrit tant que ce taux n'est pas jugé.        */
-const SEUIL_SUR = 0.70;   /* au-dessus : application directe, sans rien demander */
-const SEUIL_BAS = 0.25;   /* au-dessous : le contenu est manifestement étranger */
-
-function tauxCommun(communs, avant, apres){
-  const base = Math.max(avant.length, apres.length);
-  return base ? communs / base : 1;
-}
-
-/* Squelette d'un mot : ses lettres, sans accent ni ton, đ ramené à d.
-   Un texte tapé sans diacritiques et rendu accentué par l'IA ne partage
-   aucun mot au sens strict, alors que c'est la correction la plus normale
-   qui soit : le recouvrement se mesure donc sur ce squelette.            */
-function squelette(mot){
-  return (mot || '').normalize('NFD').replace(/\p{M}+/gu, '')
-                    .replace(/[đĐ]/g, 'd').toLowerCase();
-}
-
-/* Début d'un texte, sur une seule ligne, pour l'identifier d'un coup d'œil. */
-function extraitCourt(t, n){
-  const s = (t || '').replace(/\s+/g, ' ').trim();
-  return s.length > n ? s.slice(0, n).trim() + '…' : s;
-}
-
-let verifEnAttente = null;   /* correction calculée, en attente d'un feu vert */
-
-function demanderVerification(ctx){
-  verifEnAttente = ctx;
-  const etranger  = ctx.taux < SEUIL_BAS;
-  const remplaces = Math.max(0, ctx.avant.length - ctx.compar.communs);
-  const pourcent  = Math.round(ctx.taux * 100);
-
-  document.getElementById('titreVerif').textContent = etranger
-    ? "Ce contenu ne correspond pas à ton texte"
-    : "Ce contenu ne ressemble pas à une correction";
-
-  document.getElementById('verifResume').textContent = etranger
-    ? "Sur les " + ctx.avant.length + " mots de ton texte, " + ctx.compar.communs +
-      (ctx.compar.communs > 1 ? " seulement se retrouvent" : " seulement se retrouve") +
-      " dans ce qui vient d'être collé. Ce n'est visiblement pas une réponse à ce texte : " +
-      "le presse-papier contient probablement tout autre chose. Rien n'a été modifié."
-    : remplaces + (remplaces > 1 ? " mots" : " mot") + " sur les " + ctx.avant.length +
-      " de ton texte seraient remplacés, soit " + pourcent + " % de mots en commun seulement. " +
-      "Une correction de frappe n'en change normalement que quelques-uns. Vérifie que le " +
-      "presse-papier contient bien la réponse à ce texte-ci.";
-
-  const tien  = document.getElementById('verifTien');
-  const colle = document.getElementById('verifColle');
-  tien.textContent  = extraitCourt(ctx.reference, 220);
-  colle.textContent = extraitCourt(ctx.reponse, 220) || '(rien)';
-  colle.classList.toggle('vide', !extraitCourt(ctx.reponse, 220));
-
-  /* Quand le contenu est manifestement étranger, c'est l'annulation qui est
-     mise en avant : appliquer reste possible, mais n'est plus proposé. */
-  const forcer  = document.getElementById('btnVerifForcer');
-  const annuler = document.getElementById('btnVerifAnnuler');
-  forcer.className  = etranger ? 'discret' : 'principal';
-  annuler.className = etranger ? 'principal' : '';
-
-  document.getElementById('dlgVerif').showModal();
-}
-
-document.getElementById('btnVerifForcer').addEventListener('click', () => {
-  const ctx = verifEnAttente;
-  verifEnAttente = null;
-  document.getElementById('dlgVerif').close();
-  if (ctx) poserCorrection(ctx);
-});
-
-/* Fermeture sans avoir forcé — bouton Annuler, croix ou touche Échap. */
-document.getElementById('dlgVerif').addEventListener('close', () => {
-  if (!verifEnAttente) return;
-  verifEnAttente = null;
-  message("Contenu écarté : ton texte n'a pas été modifié.");
-});
-
-/* Va-et-vient entre un mot signalé et son explication, dans les deux sens.
-   Rien à voir avec le mode lecture du vocabulaire : le texte reste éditable. */
-function viserDoute(i){
-  document.querySelectorAll('#doutesListe li.vise, #editeur .faux.vise, #editeur .doute.vise')
-          .forEach(n => n.classList.remove('vise'));
-  const li  = document.getElementById('doute-' + i);
-  const mot = editeur.querySelector('.faux[data-d="' + i + '"], .doute[data-d="' + i + '"]');
-  if (li)  li.classList.add('vise');
-  if (mot) mot.classList.add('vise');
-  return { li, mot };
-}
-
-editeur.addEventListener('click', (e) => {
-  const cible = e.target && e.target.closest ? e.target.closest('#editeur .faux, #editeur .doute') : null;
-  if (!cible || cible.dataset.d === undefined) return;
-  const { li } = viserDoute(cible.dataset.d);
-  if (li) li.scrollIntoView({ behavior:'smooth', block:'nearest' });
-});
-
-document.getElementById('doutesListe').addEventListener('click', (e) => {
-  const li = e.target && e.target.closest ? e.target.closest('li') : null;
-  if (!li || !/^doute-\d+$/.test(li.id)) return;
-  const { mot } = viserDoute(li.id.slice(6));
-  if (mot) mot.scrollIntoView({ behavior:'smooth', block:'center' });
-});
-
 function appliquer(brut){
   if (RE_MOTS.test(brut || '')){ appliquerVocabulaire(brut); return; }
   const parties = decouperReponse(brut);
@@ -2455,10 +2221,9 @@ function appliquer(brut){
   const items = analyserMarques(reponse);
   const ajouts = items.filter(i => i.type === 'ajout');
   const suppressions = items.filter(i => i.type === 'suppr');
-  const signales = items.filter(i => i.type === 'faux' || i.type === 'doute');
 
-  if (!ajouts.length && !suppressions.length && !signales.length && texteSansMarques(items) === reference){
-    afficherResume([], parties.remarques, parties.presente, parties.traduction, []);
+  if (!ajouts.length && !suppressions.length && texteSansMarques(items) === reference){
+    afficherResume([], parties.remarques, parties.presente, parties.traduction);
     message("Aucune différence : " + nomIA() + " n'a rien corrigé." +
             (parties.remarques.length
               ? ' ' + parties.remarques.length + (parties.remarques.length > 1 ? ' tournures signalées' : ' tournure signalée') + ' plus bas.'
@@ -2466,61 +2231,31 @@ function appliquer(brut){
     return;
   }
 
-  /* Tout le diagnostic est fait ici, avant la moindre écriture dans l'éditeur. */
-  const avant  = mots(reference);
-  const apres  = motsComparaison(items);
-  const compar = comparer(avant, apres);
-  let taux     = tauxCommun(compar.communs, avant, apres);
-
-  /* Seconde mesure, plus indulgente, seulement si la première est basse :
-     elle rattrape les corrections qui rétablissent tous les diacritiques. */
-  if (taux < SEUIL_SUR){
-    const nu = comparer(avant.map(squelette), apres.map(squelette));
-    taux = Math.max(taux, tauxCommun(nu.communs, avant, apres));
-  }
-
-  const ctx = { items, ajouts, suppressions, signales, parties, reference, reponse, avant, apres, compar, taux };
-
-  if (taux >= SEUIL_SUR){ poserCorrection(ctx); return; }
-  demanderVerification(ctx);
-}
-
-/* Écriture effective de la correction dans l'éditeur. */
-function poserCorrection(ctx){
-  const { items, ajouts, suppressions, signales, parties, avant, apres, compar } = ctx;
-  const marques = compar.marques;
-  const changements = compar.changements.slice();
-  changements.forEach(c => { if (!c.genre) c.genre = 'corr'; });
-
   htmlAvantCorrection = editeur.innerHTML;
+  const avant = mots(reference);
+  const apres = motsComparaison(items);
+  const { marques, changements } = comparer(avant, apres);
+  changements.forEach(c => { if (!c.genre) c.genre = 'corr'; });
 
   ajouts.forEach(i => changements.push({ genre:'ajout', avant:null, apres:i.v }));
   suppressions.forEach(i => changements.push({ genre:'suppr', avant:i.v, apres:null }));
 
-  /* Les mots signalés ne comptent pas comme des modifications : le texte n'a
-     pas bougé, c'est à l'auteur de trancher. Ils ont leur propre liste. */
-  const doutes = parties.doutes || [];
-  afficherResultat(items, marques, doutes);
-  afficherResume(changements, parties.remarques, parties.presente, parties.traduction, doutes);
+  afficherResultat(items, marques);
+  afficherResume(changements, parties.remarques, parties.presente, parties.traduction);
   if (changements.length) allumerOk();
   majCompteur();
   sauver();
 
-  if (changements.length || signales.length) passerEnModeAccepter(); else passerEnModeAppliquer();
+  if (changements.length) passerEnModeAccepter(); else passerEnModeAppliquer();
 
-  const nbFaux  = signales.filter(i => i.type === 'faux').length;
-  const nbDoute = signales.filter(i => i.type === 'doute').length;
   const nbCorr = changements.filter(c => c.genre === 'corr').length;
   const parts = [];
   if (nbCorr) parts.push(nbCorr + (nbCorr > 1 ? ' mots corrigés' : ' mot corrigé'));
   if (ajouts.length) parts.push(ajouts.length + (ajouts.length > 1 ? ' ajouts proposés' : ' ajout proposé') + ' (en gras)');
   if (suppressions.length) parts.push(suppressions.length + (suppressions.length > 1 ? ' suppressions proposées' : ' suppression proposée') + ' (barré)');
-  if (nbFaux)  parts.push(nbFaux + (nbFaux > 1 ? ' mots manifestement faux' : ' mot manifestement faux') + ' (ambre souligné)');
-  if (nbDoute) parts.push(nbDoute + (nbDoute > 1 ? ' mots douteux' : ' mot douteux') + ' (ambre pointillé)');
   if (parties.remarques.length) parts.push(parties.remarques.length + (parties.remarques.length > 1 ? ' tournures signalées' : ' tournure signalée'));
 
   let msg = parts.length ? parts.join(', ') + '.' : 'Texte remplacé, sans différence de mots.';
-  if (signales.length) msg += " Clique un mot ambre pour lire l'explication.";
   if (apres.length !== avant.length){
     msg += " Attention : hors marques, " + nomIA() + " a changé le nombre de mots (" + avant.length + ' → ' + apres.length + ').';
     message(msg, true);
@@ -2573,29 +2308,7 @@ document.getElementById('btnRevenir').addEventListener('click', () => {
   message("Texte envoyé restauré.");
 });
 
-/* « Tout effacer » est la seule action de la page qui détruise le texte sans
-   qu'il en reste trace : elle demande donc confirmation, comme le bandeau OK.
-   Un premier clic arme le bouton pendant cinq secondes, un second exécute. */
-let attenteVider = null;
-
-function annulerConfirmationVider(){
-  clearTimeout(attenteVider);
-  attenteVider = null;
-  btnVider.classList.remove('confirme');
-  btnVider.classList.add('discret');
-  btnVider.textContent = 'Tout effacer';
-}
-
-btnVider.addEventListener('click', () => {
-  if (!attenteVider){
-    if (!texteEditeur()){ message("L'éditeur est déjà vide."); return; }
-    btnVider.classList.remove('discret');
-    btnVider.classList.add('confirme');
-    btnVider.textContent = 'Confirmer : tout effacer ?';
-    attenteVider = setTimeout(annulerConfirmationVider, 5000);
-    return;
-  }
-  annulerConfirmationVider();
+document.getElementById('btnVider').addEventListener('click', () => {
   editeur.innerHTML = '';
   resume.style.display = 'none';
   htmlAvantCorrection = null;
@@ -2867,7 +2580,7 @@ document.getElementById('btnGhRecuperer').addEventListener('click', async () => 
     const d = docCourant();
     d.sync = editeur.innerHTML;
     sauver();
-    if (editeur.querySelector('.corr, .ajout, .suppr, .faux, .doute')) passerEnModeAccepter(); else passerEnModeAppliquer();
+    if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
     const quand = charge.maj ? new Date(charge.maj).toLocaleString('fr-FR') : 'date inconnue';
     messageGit('Texte « ' + nom + ' » récupéré (enregistré le ' + quand + ').', 'ok');
     message('Texte chargé depuis GitHub.');
@@ -2896,7 +2609,7 @@ const docInitial = docCourant();
 editeur.innerHTML = docInitial.texte || '';
 texteEnvoye = docInitial.envoye || '';
 restaurerVue(docInitial.vue);
-if (editeur.querySelector('.corr, .ajout, .suppr, .faux, .doute')) passerEnModeAccepter(); else passerEnModeAppliquer();
+if (editeur.querySelector('.corr, .ajout, .suppr')) passerEnModeAccepter(); else passerEnModeAppliquer();
 majFormulaireParams();
 majTextesIA();
 ghCharger();
