@@ -177,6 +177,16 @@
     flex:1 1 100%;width:100%;margin:0;padding:7px 14px;min-width:0;letter-spacing:.04em;
   }
   #editeur.lecture{caret-color:transparent}
+  /* En lecture, tout ce qui n'est pas texte, explications ou bandeau s'efface :
+     les deux fenêtres ne sont séparées que par le bouton OK. */
+  body.lecture .zone-titre,
+  body.lecture .sous-titre,
+  body.lecture #etat,
+  body.lecture #blocMots h2{display:none}
+  body.lecture header{margin-bottom:6px}
+  body.lecture h1{font-size:1.05rem}
+  body.lecture .carte{padding-top:12px}
+  body.lecture #boutonsPrincipaux{margin:10px 0}
 
   /* Sections repliables */
   details.section{
@@ -295,7 +305,7 @@
   <header>
     <h1>Sửa lỗi <span class="vn">·</span> correcteur de frappe</h1>
     <div class="entete-outils">
-      <button class="badge" id="badgeVersion" title="Historique des versions">V27</button>
+      <button class="badge" id="badgeVersion" title="Historique des versions">V29</button>
       <button class="icone-param" id="btnParams" title="Paramètres" aria-label="Paramètres">⚙️</button>
     </div>
   </header>
@@ -484,7 +494,8 @@
         coloré fait défiler la fenêtre jusqu'à son explication, qui passe en gras — et inversement, cliquer
         une explication centre le mot dans le texte, un nouveau clic allant à son occurrence suivante.
         Pendant cette lecture, le texte et les explications forment deux fenêtres qui défilent chacune de
-        leur côté, séparées par le bandeau « OK », et se partagent la hauteur de l'écran — sur un grand
+        leur côté, séparées par le seul bandeau « OK » — nom du texte, compteur, ligne d'état et titre de
+        la liste s'effacent le temps de la lecture —, et se partagent la hauteur de l'écran — sur un grand
         écran la fenêtre du bas garde de quoi montrer plusieurs définitions, sur un petit elle se réduit
         à celle qui est visée ; le texte n'est pas modifiable, si bien que le clavier
         ne s'ouvre pas sur un mot cliqué. Le bandeau « OK » rend au texte sa couleur et ses boutons.
@@ -664,8 +675,10 @@
    Sửa lỗi — correcteur de frappe vietnamien
    Application HTML monofichier
 ------------------------------------------------------------------- */
-const VERSION = 'V27';
+const VERSION = 'V29';
 const HISTORIQUE = [
+  { v:'V29', d:'sept. 2026', t:"En lecture, l'en-tête se fait discret à son tour : la phrase d'explication sous le titre disparaît et le titre lui-même se réduit, ce qui rend une bonne partie de la hauteur aux deux fenêtres sur un écran de téléphone." },
+  { v:'V28', d:'sept. 2026', t:"Pendant la lecture du vocabulaire, la ligne du nom et du compteur, la ligne d'état et le titre de la liste s'effacent : les deux fenêtres de texte ne sont plus séparées que par le bandeau OK, et récupèrent la place ainsi libérée. Tout revient au sortir de la lecture." },
   { v:'V27', d:'sept. 2026', t:"Changement de police pour le vietnamien : Noto Serif remplace Charter, qui ne possédait pas les lettres à crochet et laissait le navigateur composer ư et ơ en deux morceaux — le crochet finissait détaché, au risque d'être pris pour un accent. Times New Roman sert de secours si la police ne peut pas être chargée." },
   { v:'V26', d:'sept. 2026', t:"Les deux fenêtres de lecture reçoivent une hauteur ferme et non un simple plafond, si bien qu'elles remplissent réellement l'écran. Le partage se mesure à l'intérieur de la carte plutôt que par rapport au défilement, donc il ne dépend plus du moment où il est calculé. Enfin, aucune des deux boîtes ne s'étire au-delà de son contenu, et le texte rend aux explications la place qu'il n'utilise pas." },
   { v:'V25', d:'sept. 2026', t:"En lecture du vocabulaire, les deux fenêtres se partagent maintenant la hauteur réellement disponible, mesurée à l'écran : environ 62 % pour le texte, le reste pour les explications, avec un plancher confortable en bas. Sur grand écran la fenêtre du bas garde sa hauteur et montre plusieurs définitions, celle qui est visée y étant simplement amenée ; sur petit écran elle continue de se réduire à l'explication visée. Le partage est recalculé au redimensionnement de la fenêtre." },
@@ -1920,6 +1933,7 @@ function surlignerMots(reference, mots){
 function entrerModeMots(){
   const liste = document.getElementById('motsListe');
   editeur.classList.add('lecture');
+  document.body.classList.add('lecture');
   editeur.setAttribute('contenteditable', 'false');
   document.getElementById('boutonsPrincipaux').classList.add('lecture');
   btnOk.textContent = 'OK — revenir au texte';
@@ -1986,6 +2000,7 @@ window.addEventListener('resize', ajusterHauteurs);
 function quitterModeMots(){
   const liste = document.getElementById('motsListe');
   editeur.classList.remove('lecture');
+  document.body.classList.remove('lecture');
   editeur.setAttribute('contenteditable', 'true');
   document.getElementById('boutonsPrincipaux').classList.remove('lecture');
   btnOk.textContent = 'OK';
