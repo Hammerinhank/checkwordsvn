@@ -1,7 +1,7 @@
 {
   "application": "correcteur-vietnamien",
   "version": "V35",
-  "maj": "2026-09-09T21:57:13.223Z",
+  "maj": "2026-09-10T13:36:05.349Z",
   "textes": {
     "Tableau de Vermeer": {
       "texte": "Bác phải chọn một bức tranh trong khoảng ba mươi bức tranh vì họa sĩ này không đã vẽ nhiều bức tranh. Bác chọn bức tranh tên là “Cô gái đeo hoa tai ngọc trai. Bác muốn cháu biết Vermeer đã cần nhiều năm để vẽ một bức tranh duy nhất. Hơn nữa Vermeer vẽ với một cách rất của mình: Không có một họa sĩ khác vẽ giống Vermeer. Ngọc trai là rất quan trọng cho Vermeer vì anh ấy vẽ mỗi điều giống như điều đó là một ngọc trai. Nếu cháu Chi có thời gian thì có thể xem làm thế nào Vermeer đã vẽ miệng của cô gái trên bức tranh. Nhiều năm trước, bác đã vẽ một bức tranh giống một bức tranh của Vermeer. Bác gửi cho cháu mấy ảnh nên cháu có thể xem họ. Bức tranh này là bức tranh duy nhất Vermeer vẽ về một thành phố. Bác hy vọng cháu đi trên mạng internet để xem mọi bức tranh của một họa sĩ bác mà quá thích. ",
@@ -44,14 +44,14 @@
       "maj": "2026-09-09T06:20:49.152Z"
     },
     "Henri": {
-      "texte": "Tôi muốn bắt đầu viết một bài. Bài viết   của tôi sẽ nói về một người bạn của tôi. Bạn của tôi sắp đi Việt Nam. Bạn của tôi có thể ở đó từ cuối tháng mười hai đến tháng một năm sau.",
-      "brut": "Tôi muốn bắt đầu viết một bài. Bài viết   của tôi sẽ nói về một người bạn của tôi. Bạn của tôi sắp đi Việt Nam. Bạn của tôi có thể ở đó từ cuối tháng mười hai đến tháng một năm sau.",
+      "texte": "Tôi muốn bắt đầu viết một bài. Bài viết   của tôi sẽ nói về một người bạn của tôi. Bạn của tôi sắp đi Việt Nam. Bạn của tôi sắp đi Việt Nam. Anh ấy sẽ ở đó từ cuối tháng này đến tháng một năm sau.",
+      "brut": "Tôi muốn bắt đầu viết một bài. Bài viết   của tôi sẽ nói về một người bạn của tôi. Bạn của tôi sắp đi Việt Nam. Bạn của tôi sắp đi Việt Nam. Anh ấy sẽ ở đó từ cuối tháng này đến tháng một năm sau.",
       "envoye": "Tôi muốn bắt đầu viết một bài viết. Bài viết   của tôi sẽ nói về một người bạn của tôi. Bạn của tôi định sớm đi Việt Nam. Bạn của tôi có thể ở đó từ cuối tháng mười hai đến tháng một năm sau.",
       "ia": "chatgpt",
       "mode": "onglet",
       "modele": "gpt-4o-mini",
       "version": "V35",
-      "maj": "2026-09-09T21:57:13.222Z"
+      "maj": "2026-09-10T13:36:05.322Z"
     }
   }
 }
